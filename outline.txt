@@ -1,0 +1,23 @@
+I am creating an offline, open source version of the Graphite CLI.
+
+The Graphite CLI is a tool that allows you to manage your GitHub branches and pull requests.
+The Graphite CLI is a command line application that uses the GitHub API to manage your branches and pull requests.
+
+The features that I want to focus on are:
+- Interactive branch checkout
+- Creating branches based off of other branches
+- Rebasing branches when there is a change on an upstream branch
+- Pushing branches to GitHub
+- Pulling branches from GitHub
+- Listing branches
+- Creating pull requests
+
+Tools that I will use:
+- SQLite for the database
+- Commander.js for the command line interface
+- Octokit for the GitHub API
+- Inquirer.js for the interactive prompts
+- Chalk for the colored output
+
+
+

@@ -1,0 +1,23 @@
+{
+  "name": "cli",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --bun index.ts",
+    "start": "bun run index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@graphene/core": "workspace:*",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "inquirer": "^12.4.1",
+    "keytar": "^7.9.0",
+    "open": "^10.1.0"
+  }
+}
