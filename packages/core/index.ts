@@ -4,6 +4,8 @@ import { CredentialsService } from "./services/credentials";
 import { BranchService, type Branch } from "./services/branches";
 import { RepositoryService } from "./services/repository";
 import { GitService } from "./services/git";
+import { DatabaseService } from "../database/src";
+import { StackService } from "./services/stack";
 
 export type VerificationData = {
   verification_uri: string;
@@ -55,4 +57,11 @@ export async function logout(): Promise<void> {
   await credentialsService.clearAllTokens();
 }
 
-export { BranchService, type Branch, RepositoryService, GitService };
+export {
+  BranchService,
+  type Branch,
+  RepositoryService,
+  GitService,
+  DatabaseService,
+  StackService,
+};

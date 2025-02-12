@@ -50,4 +50,34 @@ export class GitService {
       );
     }
   }
+
+  public async getCurrentBranch(): Promise<string> {
+    const { output, exitCode } = await this.executeGitCommand([
+      "branch",
+      "--show-current",
+    ]);
+
+    if (exitCode !== 0) {
+      throw new Error("Failed to get current branch");
+    }
+
+    return output;
+  }
+
+  public async checkoutBranch(
+    branchName: string,
+    create: boolean = false
+  ): Promise<void> {
+    const args = ["checkout"];
+    if (create) {
+      args.push("-b");
+    }
+    args.push(branchName);
+
+    const { exitCode, error } = await this.executeGitCommand(args);
+
+    if (exitCode !== 0) {
+      throw new Error(`Failed to checkout branch: ${error || "Unknown error"}`);
+    }
+  }
 }

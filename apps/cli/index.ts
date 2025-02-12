@@ -8,6 +8,7 @@ import {
   BranchService,
   RepositoryService,
   GitService,
+  StackService,
 } from "@graphene/core";
 import open from "open";
 import inquirer from "inquirer";
@@ -100,20 +101,23 @@ program
 
 program
   .command("branches")
-  .description("List all local branches")
+  .description("List all branches grouped by stack")
   .action(async () => {
     try {
       const branchService = BranchService.getInstance();
-      const branches = await branchService.listLocalBranches();
+      const groupedBranches = await branchService.listBranches();
 
-      console.log(chalk.blue("\nLocal branches:"));
+      console.log(chalk.blue("\nBranches by stack:"));
 
-      branches.forEach((branch) => {
-        const prefix = branch.current ? "* " : "  ";
-        console.log(
-          chalk.blue(prefix),
-          branch.current ? chalk.green(branch.name) : chalk.blue(branch.name)
-        );
+      Object.entries(groupedBranches).forEach(([stackName, branches]) => {
+        console.log(chalk.yellow(`\n${stackName}:`));
+        branches.forEach((branch) => {
+          const prefix = branch.current ? "* " : "  ";
+          console.log(
+            chalk.blue(prefix),
+            branch.current ? chalk.green(branch.name) : chalk.blue(branch.name)
+          );
+        });
       });
 
       console.log(); // Empty line at the end
@@ -164,67 +168,6 @@ program
   });
 
 program
-  .command("create")
-  .description("Create a new GitHub repository")
-  .action(async () => {
-    try {
-      const answers = await inquirer.prompt([
-        {
-          type: "input",
-          name: "name",
-          message: "Repository name:",
-          validate: (input) => {
-            if (input.trim().length === 0) {
-              return "Repository name cannot be empty";
-            }
-            if (!/^[a-zA-Z0-9-_]+$/.test(input)) {
-              return "Repository name can only contain letters, numbers, hyphens, and underscores";
-            }
-            return true;
-          },
-        },
-        {
-          type: "input",
-          name: "description",
-          message: "Repository description (optional):",
-        },
-        {
-          type: "confirm",
-          name: "isPrivate",
-          message: "Make repository private?",
-          default: false,
-        },
-      ]);
-
-      const repoService = RepositoryService.getInstance();
-
-      console.log(chalk.blue("\nCreating GitHub repository..."));
-
-      const repoUrl = await repoService.createGitHubRepository(
-        answers.name,
-        answers.description || undefined,
-        answers.isPrivate
-      );
-
-      console.log(chalk.green("\n✓ Repository created successfully"));
-      console.log(chalk.gray("Repository URL:"), chalk.blue(repoUrl));
-      console.log(chalk.gray("\nNext steps:"));
-      console.log(
-        chalk.gray("1."),
-        "Push your code:",
-        chalk.blue("git push -u origin main"),
-        "\n"
-      );
-    } catch (error) {
-      console.error(
-        chalk.red("\nFailed to create repository:"),
-        error instanceof Error ? error.message : "Unknown error"
-      );
-      process.exit(1);
-    }
-  });
-
-program
   .command("git [args...]", { isDefault: true })
   .description("Execute Git commands directly")
   .allowUnknownOption()
@@ -253,6 +196,96 @@ program
     } catch (error) {
       console.error(
         chalk.red("\nFailed to execute git command:"),
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      process.exit(1);
+    }
+  });
+
+program
+  .command("branch")
+  .description("Branch operations")
+  .argument("<name>", "Name of the branch to create")
+  .action(async (branchName: string) => {
+    try {
+      const stackService = StackService.getInstance();
+
+      console.log(chalk.blue("\nCreating branch in stack..."));
+
+      await stackService.createBranchInStack(branchName);
+
+      console.log(
+        chalk.green("\n✓ Successfully created branch:"),
+        chalk.blue(branchName)
+      );
+      console.log(
+        chalk.gray("Branch is now part of the stack and ready for commits\n")
+      );
+    } catch (error) {
+      console.error(
+        chalk.red("\nFailed to create branch:"),
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      process.exit(1);
+    }
+  });
+
+program
+  .command("checkout")
+  .alias("co")
+  .description("Interactively checkout a branch")
+  .action(async () => {
+    try {
+      const branchService = BranchService.getInstance();
+      const gitService = GitService.getInstance();
+      const currentBranch = await gitService.getCurrentBranch();
+
+      // Get branches grouped by stack
+      const groupedBranches = await branchService.listBranches();
+
+      // Format choices for inquirer
+      const choices = Object.entries(groupedBranches).flatMap(
+        ([stackName, branches]) => [
+          new inquirer.Separator(chalk.yellow(`\n${stackName}`)),
+          ...branches.map((branch) => ({
+            name: `${branch.current ? chalk.green("* ") : "  "}${branch.name}`,
+            value: branch.name,
+            short: branch.name,
+          })),
+        ]
+      );
+
+      const { selectedBranch } = await inquirer.prompt([
+        {
+          type: "list",
+          name: "selectedBranch",
+          message: "Select branch to checkout:",
+          default: currentBranch,
+          pageSize: 20,
+          choices,
+        },
+      ]);
+
+      if (selectedBranch === currentBranch) {
+        console.log(
+          chalk.yellow("\nAlready on branch:"),
+          chalk.blue(currentBranch)
+        );
+        return;
+      }
+
+      console.log(chalk.blue("\nChecking out branch..."));
+
+      await gitService.checkoutBranch(selectedBranch);
+
+      console.log(
+        chalk.green("\n✓ Switched to branch:"),
+        chalk.blue(selectedBranch),
+        "\n"
+      );
+    } catch (error) {
+      console.error(
+        chalk.red("\nFailed to checkout branch:"),
         error instanceof Error ? error.message : "Unknown error"
       );
       process.exit(1);

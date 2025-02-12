@@ -1,14 +1,25 @@
 import { spawn } from "child_process";
+import { eq } from "drizzle-orm";
+import { DatabaseService, branches, stacks } from "@graphene/database";
 
 export interface Branch {
   name: string;
   current: boolean;
 }
 
+export interface StackedBranch {
+  name: string;
+  current: boolean;
+  stackName: string | null;
+}
+
 export class BranchService {
   private static instance: BranchService;
+  private db: DatabaseService;
 
-  private constructor() {}
+  private constructor() {
+    this.db = DatabaseService.getInstance();
+  }
 
   public static getInstance(): BranchService {
     if (!BranchService.instance) {
@@ -17,42 +28,43 @@ export class BranchService {
     return BranchService.instance;
   }
 
-  public async listLocalBranches(): Promise<Branch[]> {
+  public async listBranches(): Promise<{ [key: string]: StackedBranch[] }> {
     try {
-      const branches: Branch[] = [];
-
-      // Execute git branch command
-      const process = spawn("git", ["branch"]);
-
-      // Convert the command output to string and process it
-      for await (const chunk of process.stdout) {
-        const output = chunk.toString();
-        const branchLines = output.split("\n").filter(Boolean);
-
-        // Process each line of output
-        branchLines.forEach((line: string) => {
-          const isCurrent = line.startsWith("*");
-          const name = line.replace("*", "").trim();
-
-          if (name) {
-            branches.push({
-              name,
-              current: isCurrent,
-            });
-          }
-        });
-      }
-
-      // Check for errors
-      const exitCode = await new Promise((resolve) => {
-        process.on("close", resolve);
+      // Get current branch from git
+      const gitProcess = spawn("git", ["branch", "--show-current"]);
+      const currentBranch = await new Promise<string>((resolve) => {
+        gitProcess.stdout.on("data", (data) => resolve(data.toString().trim()));
       });
 
-      if (exitCode !== 0) {
-        throw new Error("Failed to list branches");
-      }
+      // Get branches from database with their stacks
+      const result = await this.db
+        .getDb()
+        .select({
+          branchName: branches.name,
+          stackName: stacks.name,
+        })
+        .from(branches)
+        .leftJoin(stacks, eq(branches.stack_id, stacks.id));
 
-      return branches;
+      // Group branches by stack
+      const grouped: { [key: string]: StackedBranch[] } = {
+        "No Stack": [], // For branches not in a stack
+      };
+
+      result.forEach((row) => {
+        const stackName = row.stackName || "No Stack";
+        if (!grouped[stackName]) {
+          grouped[stackName] = [];
+        }
+
+        grouped[stackName].push({
+          name: row.branchName,
+          current: row.branchName === currentBranch,
+          stackName: row.stackName,
+        });
+      });
+
+      return grouped;
     } catch (error) {
       throw new Error(
         `Failed to list branches: ${
