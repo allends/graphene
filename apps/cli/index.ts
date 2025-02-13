@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import {
   AuthenticationService,
@@ -6,7 +6,6 @@ import {
   DatabaseService,
   GitService,
   PullRequestService,
-  RepositoryService,
   StackService,
 } from "@allends/graphene-core";
 import chalk from "chalk";
@@ -107,43 +106,6 @@ program
     } catch (error) {
       console.error(
         chalk.red("\nFailed to list branches:"),
-        error instanceof Error ? error.message : "Unknown error"
-      );
-      process.exit(1);
-    }
-  });
-
-program
-  .command("init")
-  .description("Initialize a new Git repository")
-  .action(async () => {
-    try {
-      const repoService = RepositoryService.getInstance();
-
-      console.log(chalk.blue("\nInitializing new Git repository..."));
-
-      await repoService.initRepository();
-
-      console.log(chalk.green("\n✓ Repository initialized successfully"));
-      console.log(
-        chalk.gray("Created empty Git repository with initial commit")
-      );
-      console.log(chalk.gray("\nNext steps:"));
-      console.log(chalk.gray("1."), "Add your files:", chalk.blue("git add ."));
-      console.log(
-        chalk.gray("2."),
-        "Commit changes:",
-        chalk.blue("git commit -m 'Initial files'")
-      );
-      console.log(
-        chalk.gray("3."),
-        "Create branches:",
-        chalk.blue("graphene create <name>"),
-        "\n"
-      );
-    } catch (error) {
-      console.error(
-        chalk.red("\nFailed to initialize repository:"),
         error instanceof Error ? error.message : "Unknown error"
       );
       process.exit(1);

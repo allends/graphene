@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { DatabaseService, branches, stacks } from "@allends/graphene-database";
+import { GitService } from "./git";
 
 export interface Branch {
   name: string;
@@ -16,9 +17,11 @@ export interface StackedBranch {
 export class BranchService {
   private static instance: BranchService;
   private db: DatabaseService;
+  private git: GitService;
 
   private constructor() {
     this.db = DatabaseService.getInstance();
+    this.git = GitService.getInstance();
   }
 
   public static getInstance(): BranchService {
@@ -30,11 +33,11 @@ export class BranchService {
 
   public async listBranches(): Promise<{ [key: string]: StackedBranch[] }> {
     try {
+      // Get repository name
+      const repositoryName = await this.git.getRepositoryName();
+
       // Get current branch from git
-      const gitProcess = spawn("git", ["branch", "--show-current"]);
-      const currentBranch = await new Promise<string>((resolve) => {
-        gitProcess.stdout.on("data", (data) => resolve(data.toString().trim()));
-      });
+      const currentBranch = await this.git.getCurrentBranch();
 
       // Get branches from database with their stacks
       const result = await this.db
@@ -42,9 +45,11 @@ export class BranchService {
         .select({
           branchName: branches.name,
           stackName: stacks.name,
+          repositoryName: stacks.repository_name,
         })
-        .from(branches)
-        .leftJoin(stacks, eq(branches.stack_id, stacks.id));
+        .from(stacks)
+        .innerJoin(branches, eq(stacks.id, branches.stack_id))
+        .where(eq(stacks.repository_name, repositoryName));
 
       // Group branches by stack
       const grouped: { [key: string]: StackedBranch[] } = {

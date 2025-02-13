@@ -8,6 +8,20 @@
       "when": 1739346217558,
       "tag": "0000_common_devos",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1739769823112,
+      "tag": "0001_lovely_gamora",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1739770748644,
+      "tag": "0002_lovely_magus",
+      "breakpoints": true
     }
   ]
 }

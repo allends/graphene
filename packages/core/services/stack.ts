@@ -66,6 +66,9 @@ export class StackService {
 
   public async createBranchInStack(branchName: string): Promise<void> {
     try {
+      // Get repository name
+      const repositoryName = await this.git.getRepositoryName();
+
       // Get current branch
       const currentBranch = await this.git.getCurrentBranch();
 
@@ -102,6 +105,7 @@ export class StackService {
         // Create new stack based on current branch
         const [newStack] = await this.db.createStack(
           `stack/${branchName}`,
+          repositoryName,
           currentBranch
         );
         stackId = newStack.id;

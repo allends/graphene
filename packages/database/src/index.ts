@@ -40,6 +40,7 @@ export class DatabaseService {
 
   public async createStack(
     name: string,
+    repositoryName: string,
     baseBranch: string,
     description?: string
   ) {
@@ -47,6 +48,7 @@ export class DatabaseService {
       .insert(schema.stacks)
       .values({
         name,
+        repository_name: repositoryName,
         base_branch: baseBranch,
         description,
       })

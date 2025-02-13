@@ -3,6 +3,7 @@ import { foreignKey } from "drizzle-orm/sqlite-core";
 
 export const stacks = sqliteTable("stacks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  repository_name: text("repository_name").notNull(),
   name: text("name").notNull(),
   base_branch: text("base_branch").notNull(), // e.g., 'main', 'develop'
   description: text("description"),

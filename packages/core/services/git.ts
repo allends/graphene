@@ -13,6 +13,32 @@ export class GitService {
   }
 
   /**
+   * Gets the repository name from the remote URL.
+   */
+  public async getRepositoryName(): Promise<string> {
+    const { output, exitCode } = await this.executeGitCommand([
+      "config",
+      "--get",
+      "remote.origin.url",
+    ]);
+
+    if (exitCode !== 0) {
+      throw new Error("Failed to get repository name");
+    }
+
+    // Extract owner and repo name from remote URL
+    // Handles formats like:
+    // https://github.com/owner/repo.git
+    // git@github.com:owner/repo.git
+    const match = output.match(/[\/:]([^\/]+?)\/([^\/]+?)(?:\.git)?$/);
+    if (!match) {
+      throw new Error("Could not parse repository name from remote URL");
+    }
+    const [_, owner, repo] = match;
+    return `${owner}/${repo}`;
+  }
+
+  /**
    * Gets the current branch name
    */
   public async getCurrentBranch(): Promise<string> {
