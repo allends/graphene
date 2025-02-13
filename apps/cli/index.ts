@@ -17,7 +17,7 @@ const program = new Command();
 
 // Setup basic program information
 program
-  .name("graphite-local")
+  .name("graphene")
   .description("A local version of the Graphite CLI for Git branch management")
   .version("0.0.1");
 
@@ -34,7 +34,7 @@ program
     console.log(chalk.green("✓"), "GitHub integration");
     console.log(
       "\nRun",
-      chalk.yellow("graphite-local --help"),
+      chalk.yellow("graphene --help"),
       "to see all available commands\n"
     );
   });
@@ -132,7 +132,7 @@ program
 
 program
   .command("init")
-  .description("Initialize a new Git repository in the current directory")
+  .description("Initialize a new Git repository")
   .action(async () => {
     try {
       const repoService = RepositoryService.getInstance();
@@ -155,7 +155,7 @@ program
       console.log(
         chalk.gray("3."),
         "Create branches:",
-        chalk.blue("graphite-local branch create <name>"),
+        chalk.blue("graphene create <name>"),
         "\n"
       );
     } catch (error) {
@@ -168,43 +168,9 @@ program
   });
 
 program
-  .command("git [args...]", { isDefault: true })
-  .description("Execute Git commands directly")
-  .allowUnknownOption()
-  .action(async (args: string[]) => {
-    // Only handle if args are provided
-    if (!args || args.length === 0) return;
-
-    try {
-      const gitService = GitService.getInstance();
-      const result = await gitService.executeGitCommand(args);
-
-      // Print output if any
-      if (result.output) {
-        console.log(result.output);
-      }
-
-      // Print error if any
-      if (result.error) {
-        console.error(chalk.red(result.error));
-      }
-
-      // Exit with the same code as git
-      if (result.exitCode !== 0) {
-        process.exit(result.exitCode);
-      }
-    } catch (error) {
-      console.error(
-        chalk.red("\nFailed to execute git command:"),
-        error instanceof Error ? error.message : "Unknown error"
-      );
-      process.exit(1);
-    }
-  });
-
-program
-  .command("branch")
-  .description("Branch operations")
+  .command("create")
+  .alias("c")
+  .description("Create a new branch in a stack")
   .argument("<name>", "Name of the branch to create")
   .action(async (branchName: string) => {
     try {
@@ -286,6 +252,72 @@ program
     } catch (error) {
       console.error(
         chalk.red("\nFailed to checkout branch:"),
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      process.exit(1);
+    }
+  });
+
+program
+  .command("modify")
+  .alias("m")
+  .description("Add or amend changes to the current branch")
+  .option("-a, --amend", "Amend the last commit instead of creating a new one")
+  .option(
+    "-m, --message <message>",
+    "Commit message (opens editor if not provided)"
+  )
+  .action(async (options: { amend?: boolean; message?: string }) => {
+    try {
+      const gitService = GitService.getInstance();
+
+      if (options.amend) {
+        console.log(chalk.blue("\nAmending last commit..."));
+        await gitService.amendCommit();
+        console.log(chalk.green("\n✓ Successfully amended last commit\n"));
+      } else {
+        console.log(chalk.blue("\nCreating new commit..."));
+        await gitService.commitAll(options.message);
+        console.log(chalk.green("\n✓ Successfully created new commit\n"));
+      }
+    } catch (error) {
+      console.error(
+        chalk.red("\nFailed to modify branch:"),
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      process.exit(1);
+    }
+  });
+
+program
+  .command("git [args...]", { isDefault: true })
+  .description("Execute Git commands directly")
+  .allowUnknownOption()
+  .action(async (args: string[]) => {
+    // Only handle if args are provided
+    if (!args || args.length === 0) return;
+
+    try {
+      const gitService = GitService.getInstance();
+      const result = await gitService.executeGitCommand(args);
+
+      // Print output if any
+      if (result.output) {
+        console.log(result.output);
+      }
+
+      // Print error if any
+      if (result.error) {
+        console.error(chalk.red(result.error));
+      }
+
+      // Exit with the same code as git
+      if (result.exitCode !== 0) {
+        process.exit(result.exitCode);
+      }
+    } catch (error) {
+      console.error(
+        chalk.red("\nFailed to execute git command:"),
         error instanceof Error ? error.message : "Unknown error"
       );
       process.exit(1);
