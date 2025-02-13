@@ -212,27 +212,7 @@ program
       const groupedBranches = await branchService.listBranches();
 
       // Get the base branch (main or master)
-      const baseBranch = await gitService
-        .executeGitCommand([
-          "rev-parse",
-          "--abbrev-ref",
-          "HEAD",
-          "--symbolic-full-name",
-          "@{u}",
-        ])
-        .then((result) => {
-          if (result.exitCode === 0) {
-            return result.output.split("/")[1];
-          }
-          return gitService
-            .executeGitCommand(["branch", "--list", "main", "master"])
-            .then((result) => {
-              const branches = result.output
-                .split("\n")
-                .map((b) => b.trim().replace("* ", ""));
-              return branches.find((b) => b) || "main";
-            });
-        });
+      const baseBranch = await gitService.getBaseBranch();
 
       // Format choices for inquirer
       const choices = [
@@ -356,7 +336,7 @@ program
 
     try {
       const gitService = GitService.getInstance();
-      const result = await gitService.executeGitCommand(args);
+      const result = await gitService.gitPassthrough(args);
 
       // Print output if any
       if (result.output) {
@@ -398,27 +378,7 @@ program
       const stack = await stackService.getCurrentStack();
 
       // Get the base branch (main or master)
-      const baseBranch = await gitService
-        .executeGitCommand([
-          "rev-parse",
-          "--abbrev-ref",
-          "HEAD",
-          "--symbolic-full-name",
-          "@{u}",
-        ])
-        .then((result) => {
-          if (result.exitCode === 0) {
-            return result.output.split("/")[1];
-          }
-          return gitService
-            .executeGitCommand(["branch", "--list", "main", "master"])
-            .then((result) => {
-              const branches = result.output
-                .split("\n")
-                .map((b) => b.trim().replace("* ", ""));
-              return branches.find((b) => b) || "main";
-            });
-        });
+      const baseBranch = await gitService.getBaseBranch();
 
       console.log(
         chalk.blue(`\nRebasing stack`),

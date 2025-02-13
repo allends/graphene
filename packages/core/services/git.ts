@@ -12,45 +12,9 @@ export class GitService {
     return GitService.instance;
   }
 
-  public async executeGitCommand(args: string[]): Promise<{
-    output: string;
-    error: string;
-    exitCode: number;
-  }> {
-    try {
-      const process = spawn("git", args);
-      let output = "";
-      let error = "";
-
-      // Collect stdout data
-      process.stdout.on("data", (data) => {
-        output += data.toString();
-      });
-
-      // Collect stderr data
-      process.stderr.on("data", (data) => {
-        error += data.toString();
-      });
-
-      // Wait for the process to complete
-      const exitCode = await new Promise<number>((resolve) => {
-        process.on("close", resolve);
-      });
-
-      return {
-        output: output.trim(),
-        error: error.trim(),
-        exitCode,
-      };
-    } catch (error) {
-      throw new Error(
-        `Failed to execute git command: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
-    }
-  }
-
+  /**
+   * Gets the current branch name
+   */
   public async getCurrentBranch(): Promise<string> {
     const { output, exitCode } = await this.executeGitCommand([
       "branch",
@@ -64,21 +28,99 @@ export class GitService {
     return output;
   }
 
-  public async checkoutBranch(
-    branchName: string,
-    create: boolean = false
-  ): Promise<void> {
-    const args = ["checkout"];
-    if (create) {
-      args.push("-b");
-    }
-    args.push(branchName);
+  /**
+   * Gets the base branch (main/master) for the repository
+   */
+  public async getBaseBranch(): Promise<string> {
+    try {
+      // First try to get the upstream branch
+      const { output, exitCode } = await this.executeGitCommand([
+        "rev-parse",
+        "--abbrev-ref",
+        "HEAD",
+        "--symbolic-full-name",
+        "@{",
+      ]);
 
-    const { exitCode, error } = await this.executeGitCommand(args);
+      if (exitCode === 0) {
+        return output.split("/")[1];
+      }
+
+      // If no upstream, check for main/master
+      const { output: branchList } = await this.executeGitCommand([
+        "branch",
+        "--list",
+        "main",
+        "master",
+      ]);
+
+      const branches = branchList
+        .split("\n")
+        .map((b) => b.trim().replace("* ", ""));
+      return branches.find((b) => b) || "main";
+    } catch (error) {
+      throw new Error(
+        `Failed to get base branch: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Creates a new branch and checks it out
+   */
+  public async createBranch(branchName: string): Promise<void> {
+    const { exitCode, error } = await this.executeGitCommand([
+      "checkout",
+      "-b",
+      branchName,
+    ]);
+
+    if (exitCode !== 0) {
+      throw new Error(`Failed to create branch: ${error || "Unknown error"}`);
+    }
+  }
+
+  /**
+   * Checks out an existing branch
+   */
+  public async checkoutBranch(branchName: string): Promise<void> {
+    const { exitCode, error } = await this.executeGitCommand([
+      "checkout",
+      branchName,
+    ]);
 
     if (exitCode !== 0) {
       throw new Error(`Failed to checkout branch: ${error || "Unknown error"}`);
     }
+  }
+
+  /**
+   * Gets the latest commit information
+   */
+  public async getLatestCommit(): Promise<{
+    sha: string;
+    author: string;
+    message: string;
+  }> {
+    const { output: sha, exitCode: shaExitCode } = await this.executeGitCommand(
+      ["rev-parse", "HEAD"]
+    );
+
+    if (shaExitCode !== 0) {
+      throw new Error("Failed to get commit SHA");
+    }
+
+    const { output: commitInfo, exitCode: infoExitCode } =
+      await this.executeGitCommand(["log", "-1", "--pretty=format:%an|%s"]);
+
+    if (infoExitCode !== 0) {
+      throw new Error("Failed to get commit info");
+    }
+
+    const [author, message] = commitInfo.split("|");
+    return { sha, author, message };
   }
 
   /**
@@ -215,5 +257,52 @@ export class GitService {
         });
       });
     });
+  }
+
+  public async gitPassthrough(args: string[]): Promise<{
+    output: string;
+    error: string;
+    exitCode: number;
+  }> {
+    return await this.executeGitCommand(args);
+  }
+
+  private async executeGitCommand(args: string[]): Promise<{
+    output: string;
+    error: string;
+    exitCode: number;
+  }> {
+    try {
+      const process = spawn("git", args);
+      let output = "";
+      let error = "";
+
+      // Collect stdout data
+      process.stdout.on("data", (data) => {
+        output += data.toString();
+      });
+
+      // Collect stderr data
+      process.stderr.on("data", (data) => {
+        error += data.toString();
+      });
+
+      // Wait for the process to complete
+      const exitCode = await new Promise<number>((resolve) => {
+        process.on("close", resolve);
+      });
+
+      return {
+        output: output.trim(),
+        error: error.trim(),
+        exitCode,
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to execute git command: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
   }
 }

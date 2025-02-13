@@ -109,7 +109,7 @@ export class StackService {
       }
 
       // Create the new branch in git
-      await this.git.executeGitCommand(["checkout", "-b", branchName]);
+      await this.git.createBranch(branchName);
 
       // Add branch to database
       await this.db.addBranchToStack(
@@ -120,16 +120,7 @@ export class StackService {
       );
 
       // Get latest commit info
-      const { output: sha } = await this.git.executeGitCommand([
-        "rev-parse",
-        "HEAD",
-      ]);
-      const { output: commitInfo } = await this.git.executeGitCommand([
-        "log",
-        "-1",
-        "--pretty=format:%an|%s",
-      ]);
-      const [author, message] = commitInfo.split("|");
+      const { sha, author, message } = await this.git.getLatestCommit();
 
       // Add initial commit info
       if (sha && author && message) {
