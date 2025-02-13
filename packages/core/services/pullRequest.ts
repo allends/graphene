@@ -62,13 +62,27 @@ export class PullRequestService {
         )
         .limit(1);
 
+      // If no parent branch found, this is the bottom of the stack
+      // Use the base branch (main/master) as the base
       if (!parentBranch) {
-        throw new Error(
-          "No parent branch found - cannot create PR for base of stack"
-        );
+        const baseBranch = await this.git.getBaseBranch();
+        const repo = await this.getGitHubRepo();
+
+        console.log(repo);
+        console.log(branchName);
+        console.log(baseBranch);
+
+        await this.octokit.rest.pulls.create({
+          owner: repo.owner,
+          repo: repo.name,
+          title: branchName,
+          head: branchName,
+          base: baseBranch,
+        });
+        return;
       }
 
-      // Check if parent branch has a PR
+      // For non-bottom branches, check if parent has a PR
       const repo = await this.getGitHubRepo();
       const parentPRs = await this.octokit.rest.pulls.list({
         owner: repo.owner,
@@ -83,7 +97,7 @@ export class PullRequestService {
         );
       }
 
-      // Create the PR
+      // Create the PR targeting the parent branch
       await this.octokit.rest.pulls.create({
         owner: repo.owner,
         repo: repo.name,

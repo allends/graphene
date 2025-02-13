@@ -1,10 +1,11 @@
 import { createOAuthDeviceAuth } from "@octokit/auth-oauth-device";
 import { Octokit } from "octokit";
-import { CredentialsService } from "./services/credentials";
-import { BranchService, type Branch } from "./services/branches";
-import { RepositoryService } from "./services/repository";
-import { GitService } from "./services/git";
 import { DatabaseService } from "../database/src";
+import { BranchService, type Branch } from "./services/branches";
+import { CredentialsService } from "./services/credentials";
+import { GitService } from "./services/git";
+import { PullRequestService } from "./services/pullRequest";
+import { RepositoryService } from "./services/repository";
 import { StackService } from "./services/stack";
 
 export type VerificationData = {
@@ -59,9 +60,10 @@ export async function logout(): Promise<void> {
 
 export {
   BranchService,
-  type Branch,
-  RepositoryService,
-  GitService,
   DatabaseService,
+  GitService,
+  PullRequestService,
+  RepositoryService,
   StackService,
+  type Branch,
 };

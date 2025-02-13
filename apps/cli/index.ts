@@ -10,6 +10,7 @@ import {
   GitService,
   StackService,
   DatabaseService,
+  PullRequestService,
 } from "@graphene/core";
 import open from "open";
 import inquirer from "inquirer";
@@ -397,6 +398,60 @@ program
         chalk.red("\nFailed to rebase stack:"),
         error instanceof Error ? error.message : "Unknown error"
       );
+      process.exit(1);
+    }
+  });
+
+program
+  .command("submit")
+  .description("Create a pull request for the current branch")
+  .action(async () => {
+    try {
+      const gitService = GitService.getInstance();
+      const prService = PullRequestService.getInstance();
+
+      // Get current branch
+      const currentBranch = await gitService.getCurrentBranch();
+      console.log(chalk.blue("\nCreating pull request..."));
+
+      await prService.createPullRequest(currentBranch);
+
+      console.log(
+        chalk.green("\n✓ Successfully created pull request for:"),
+        chalk.blue(currentBranch),
+        "\n"
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes("Parent branch must have an open PR")) {
+          console.error(
+            chalk.yellow("\nCannot create pull request:"),
+            "The branch below this one in the stack needs a PR first\n"
+          );
+        } else if (error.message.includes("not part of a stack")) {
+          console.error(
+            chalk.yellow("\nCannot create pull request:"),
+            "Current branch is not part of a stack\n"
+          );
+        } else if (error.message.includes("base of stack")) {
+          console.error(
+            chalk.yellow("\nCannot create pull request:"),
+            "This is the base branch of the stack\n"
+          );
+        } else {
+          console.error(
+            chalk.red("\nFailed to create pull request:"),
+            error.message,
+            "\n"
+          );
+        }
+      } else {
+        console.error(
+          chalk.red("\nFailed to create pull request:"),
+          "Unknown error",
+          "\n"
+        );
+      }
       process.exit(1);
     }
   });
