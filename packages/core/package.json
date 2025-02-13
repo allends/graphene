@@ -9,8 +9,8 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "octokit": "^4.1.1",
-    "@graphene/database": "workspace:*"
+    "@graphene/database": "workspace:*",
+    "octokit": "^4.1.1"
   },
   "scripts": {
     "build": "bun build ./index.ts",
