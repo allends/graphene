@@ -3,8 +3,6 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import {
-  authenticateWithGitHub,
-  logout,
   BranchService,
   RepositoryService,
   GitService,
@@ -16,6 +14,7 @@ import open from "open";
 import inquirer from "inquirer";
 import { eq } from "drizzle-orm";
 import { formatBranchName } from "./utils/format";
+import { AuthenticationService } from "@graphene/core/services/authentication";
 
 const program = new Command();
 
@@ -48,36 +47,16 @@ program
   .description("Authenticate with GitHub")
   .action(async () => {
     try {
+      const auth = AuthenticationService.getInstance();
+
+      if (await auth.isAuthenticated()) {
+        console.log(chalk.green("\n✓ Already logged in to GitHub\n"));
+        return;
+      }
+
       console.log(chalk.blue("\nStarting GitHub authentication..."));
-
-      const octokit = await authenticateWithGitHub(async (verification) => {
-        // Automatically open the verification URL in the default browser
-        await open(verification.verification_uri);
-
-        console.log(
-          chalk.yellow(
-            "\nIf the browser doesn't open automatically, please visit:"
-          ),
-          chalk.blue(verification.verification_uri)
-        );
-        console.log(
-          chalk.yellow("Enter this code:"),
-          chalk.green(verification.user_code)
-        );
-        console.log(
-          chalk.gray(
-            `\nCode expires in ${Math.floor(
-              verification.expires_in / 60
-            )} minutes`
-          )
-        );
-        console.log(chalk.gray("\nWaiting for authentication..."));
-      });
-
-      const { data: user } = await octokit.rest.users.getAuthenticated();
-      console.log(
-        chalk.green(`\n✓ Successfully authenticated as ${user.login}\n`)
-      );
+      await auth.authenticate();
+      console.log(chalk.green("\n✓ Successfully authenticated with GitHub\n"));
     } catch (error) {
       console.error(
         chalk.red("\nAuthentication failed:"),
@@ -92,7 +71,8 @@ program
   .description("Log out and remove stored credentials")
   .action(async () => {
     try {
-      await logout();
+      const auth = AuthenticationService.getInstance();
+      await auth.logout();
       console.log(chalk.green("\n✓ Successfully logged out\n"));
     } catch (error) {
       console.error(
@@ -414,13 +394,16 @@ program
       const currentBranch = await gitService.getCurrentBranch();
       console.log(chalk.blue("\nCreating pull request..."));
 
-      await prService.createPullRequest(currentBranch);
+      const prUrl = await prService.createPullRequest(currentBranch);
+
+      // Open the PR in the browser
+      await open(prUrl);
 
       console.log(
         chalk.green("\n✓ Successfully created pull request for:"),
-        chalk.blue(currentBranch),
-        "\n"
+        chalk.blue(currentBranch)
       );
+      console.log(chalk.gray("Opening in browser:"), chalk.blue(prUrl), "\n");
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes("Parent branch must have an open PR")) {
@@ -452,6 +435,30 @@ program
           "\n"
         );
       }
+      process.exit(1);
+    }
+  });
+
+program
+  .command("login")
+  .description("Login to GitHub")
+  .action(async () => {
+    try {
+      const auth = AuthenticationService.getInstance();
+
+      if (await auth.isAuthenticated()) {
+        console.log(chalk.green("\n✓ Already logged in to GitHub\n"));
+        return;
+      }
+
+      console.log(chalk.blue("\nAuthenticating with GitHub..."));
+      await auth.authenticate();
+      console.log(chalk.green("\n✓ Successfully logged in to GitHub\n"));
+    } catch (error) {
+      console.error(
+        chalk.red("\nFailed to login:"),
+        error instanceof Error ? error.message : "Unknown error"
+      );
       process.exit(1);
     }
   });

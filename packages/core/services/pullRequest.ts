@@ -2,20 +2,16 @@ import { GitService } from "./git";
 import { DatabaseService } from "@graphene/database/src";
 import { and, eq } from "drizzle-orm";
 import { branches } from "@graphene/database/src/schema";
-import { Octokit } from "octokit";
+import { spawn } from "child_process";
 
 export class PullRequestService {
   private static instance: PullRequestService;
   private db: DatabaseService;
   private git: GitService;
-  private octokit: Octokit;
 
   private constructor() {
     this.db = DatabaseService.getInstance();
     this.git = GitService.getInstance();
-    this.octokit = new Octokit({
-      auth: process.env.GITHUB_TOKEN,
-    });
   }
 
   public static getInstance(): PullRequestService {
@@ -26,11 +22,48 @@ export class PullRequestService {
   }
 
   /**
-   * Creates a GitHub PR for a branch in a stack
-   * @param branchName The branch to create a PR for
-   * @throws Error if PR creation fails or prerequisites aren't met
+   * Creates a GitHub PR using the gh CLI
    */
-  public async createPullRequest(branchName: string): Promise<void> {
+  private async createGitHubPR(params: {
+    title: string;
+    head: string;
+    base: string;
+  }): Promise<string> {
+    const child = spawn("gh", [
+      "pr",
+      "create",
+      "--fill",
+      "--head",
+      params.head,
+      "--base",
+      params.base,
+    ]);
+
+    return new Promise((resolve, reject) => {
+      let output = "";
+      let error = "";
+
+      child.stdout.on("data", (data) => {
+        output += data.toString();
+      });
+
+      child.stderr.on("data", (data) => {
+        error += data.toString();
+      });
+
+      child.on("close", (code) => {
+        if (code === 0) {
+          const prUrl = output.trim().split("\n")[0];
+          console.log("PR created:", prUrl);
+          resolve(prUrl);
+        } else {
+          reject(new Error(error.trim() || "Failed to create PR"));
+        }
+      });
+    });
+  }
+
+  public async createPullRequest(branchName: string): Promise<string> {
     try {
       // Get branch info from database
       const [branchData] = await this.db
@@ -63,44 +96,25 @@ export class PullRequestService {
         .limit(1);
 
       // If no parent branch found, this is the bottom of the stack
-      // Use the base branch (main/master) as the base
       if (!parentBranch) {
         const baseBranch = await this.git.getBaseBranch();
-        const repo = await this.getGitHubRepo();
-
-        console.log(repo);
-        console.log(branchName);
-        console.log(baseBranch);
-
-        await this.octokit.rest.pulls.create({
-          owner: repo.owner,
-          repo: repo.name,
+        return this.createGitHubPR({
           title: branchName,
           head: branchName,
           base: baseBranch,
         });
-        return;
       }
 
       // For non-bottom branches, check if parent has a PR
-      const repo = await this.getGitHubRepo();
-      const parentPRs = await this.octokit.rest.pulls.list({
-        owner: repo.owner,
-        repo: repo.name,
-        head: `${repo.owner}:${parentBranch.name}`,
-        state: "open",
-      });
-
-      if (parentPRs.data.length === 0) {
+      const parentPR = await this.checkPRExists(parentBranch.name);
+      if (!parentPR) {
         throw new Error(
           "Parent branch must have an open PR before creating this PR"
         );
       }
 
       // Create the PR targeting the parent branch
-      await this.octokit.rest.pulls.create({
-        owner: repo.owner,
-        repo: repo.name,
+      return this.createGitHubPR({
         title: branchName,
         head: branchName,
         base: parentBranch.name,
@@ -115,21 +129,28 @@ export class PullRequestService {
   }
 
   /**
-   * Gets the GitHub repository information for the current directory
+   * Checks if a PR exists for a branch using gh CLI
    */
-  private async getGitHubRepo(): Promise<{ owner: string; name: string }> {
-    const remoteUrl = await this.git
-      .gitPassthrough(["remote", "get-url", "origin"])
-      .then((result) => result.output);
+  private async checkPRExists(branchName: string): Promise<boolean> {
+    const child = spawn("gh", [
+      "pr",
+      "list",
+      "--head",
+      branchName,
+      "--state",
+      "open",
+    ]);
 
-    const match = remoteUrl.match(/github\.com[:/]([^/]+)\/([^.]+)(?:\.git)?$/);
-    if (!match) {
-      throw new Error("Could not determine GitHub repository from remote URL");
-    }
+    return new Promise((resolve) => {
+      let output = "";
 
-    return {
-      owner: match[1],
-      name: match[2],
-    };
+      child.stdout.on("data", (data) => {
+        output += data.toString();
+      });
+
+      child.on("close", () => {
+        resolve(output.trim().length > 0);
+      });
+    });
   }
 }
