@@ -14,6 +14,7 @@ import {
 import open from "open";
 import inquirer from "inquirer";
 import { eq } from "drizzle-orm";
+import { formatBranchName } from "./utils/format";
 
 const program = new Command();
 
@@ -214,24 +215,26 @@ program
       // Get the base branch (main or master)
       const baseBranch = await gitService.getBaseBranch();
 
-      // Format choices for inquirer
+      // Format choices for inquirer with better visual alignment
       const choices = [
-        new inquirer.Separator(chalk.yellow("\nBase Branch")),
-        {
-          name: `${
-            baseBranch === currentBranch ? chalk.green("* ") : "  "
-          }${baseBranch}`,
-          value: baseBranch,
-          short: baseBranch,
-        },
         ...Object.entries(groupedBranches).flatMap(([stackName, branches]) => [
-          new inquirer.Separator(chalk.yellow(`\n${stackName}`)),
-          ...branches.map((branch) => ({
-            name: `${branch.current ? chalk.green("* ") : "  "}${branch.name}`,
+          ...branches.reverse().map((branch) => ({
+            name: formatBranchName({ branch }),
             value: branch.name,
             short: branch.name,
           })),
+          new inquirer.Separator(chalk.blue.bold(`  ${stackName}`)),
+          new inquirer.Separator(" "),
         ]),
+        {
+          name: formatBranchName({
+            name: baseBranch,
+            isCurrent: baseBranch === currentBranch,
+          }),
+          value: baseBranch,
+          short: baseBranch,
+        },
+        new inquirer.Separator(" "),
       ];
 
       // Set up readline interface to handle 'q' keypress
@@ -253,16 +256,14 @@ program
       process.stdin.setRawMode(true);
       process.stdin.resume();
 
-      const { selectedBranch } = await inquirer.prompt([
-        {
-          type: "list",
-          name: "selectedBranch",
-          message: "Select branch to checkout (press 'q' to quit):",
-          default: currentBranch,
-          pageSize: 20,
-          choices,
-        },
-      ]);
+      const { selectedBranch } = await inquirer.prompt({
+        type: "list",
+        name: "selectedBranch",
+        message: "Select branch to checkout (press 'q' to quit):",
+        default: currentBranch,
+        pageSize: 20,
+        choices,
+      });
 
       // Clean up readline interface
       rl.close();
