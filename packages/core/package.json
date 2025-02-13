@@ -1,7 +1,11 @@
 {
   "name": "@graphene/core",
+  "version": "0.0.1",
   "module": "index.ts",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
@@ -13,7 +17,9 @@
     "octokit": "^4.1.1"
   },
   "scripts": {
-    "build": "bun build ./index.ts",
-    "dev": "bun run --watch index.ts"
-  }
+    "build": "bun build ./index.ts --outdir ./dist --target bun"
+  },
+  "files": [
+    "dist"
+  ]
 }

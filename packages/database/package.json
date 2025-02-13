@@ -1,6 +1,28 @@
 {
   "name": "@graphene/database",
+  "version": "0.0.1",
   "module": "index.ts",
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "drizzle",
+    "migrations",
+    "src"
+  ],
+  "scripts": {
+    "generate": "drizzle-kit generate:sqlite",
+    "migrate": "bun run src/migrate.ts",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "better-sqlite3": "^11.8.1",
+    "drizzle-orm": "^0.29.4"
+  },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
     "@types/bun": "latest",
@@ -8,15 +30,5 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
-  },
-  "type": "module",
-  "dependencies": {
-    "@libsql/client": "^0.14.0",
-    "better-sqlite3": "^11.8.1",
-    "drizzle-orm": "^0.29.4"
-  },
-  "scripts": {
-    "generate": "drizzle-kit generate",
-    "migrate": "bun run src/migrate.ts"
   }
 }

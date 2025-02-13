@@ -2,20 +2,25 @@
   "name": "graphene",
   "module": "index.ts",
   "type": "module",
+  "version": "0.0.1",
   "private": true,
   "bin": {
     "graphene": "./apps/cli/index.ts"
   },
   "scripts": {
-    "dev": "bun run apps/cli/index.ts",
-    "build": "bun build ./apps/cli/index.ts --compile --outfile graphene --target node",
+    "build": "bun run build:core && bun run build:cli && bun run build:database",
+    "build:core": "cd packages/core && bun run build",
+    "build:cli": "cd apps/cli && bun run build",
+    "build:database": "cd packages/database && bun run build",
+    "dev": "cd apps/cli && bun run dev",
+    "link": "cd apps/cli && bun link",
     "link-binary": "chmod +x graphene && sudo ln -sf \"$(pwd)/graphene\" /usr/local/bin/graphene",
     "install-cli": "bun run build && bun run link-binary",
     "uninstall-cli": "sudo rm -f /usr/local/bin/graphene && rm -f graphene"
   },
   "workspaces": [
-    "packages/*",
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "devDependencies": {
     "@types/bun": "latest"

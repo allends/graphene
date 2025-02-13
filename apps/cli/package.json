@@ -1,11 +1,23 @@
 {
-  "name": "cli",
+  "name": "@graphene/cli",
+  "version": "0.0.1",
+  "description": "Graphene CLI for Git branch management",
   "module": "index.ts",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "graphene": "./dist/index.js"
+  },
   "scripts": {
     "dev": "bun run --bun index.ts",
-    "start": "bun run index.ts"
+    "start": "bun run index.ts",
+    "build": "bun build ./index.ts --outdir ./dist --target bun"
   },
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
     "@types/bun": "latest"
   },
