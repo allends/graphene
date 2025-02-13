@@ -116,4 +116,4 @@ export class DatabaseService {
 }
 
 export * from "./schema";
-export { StackService } from "@graphene/core/services/stack";
+export { StackService } from "@allends/graphene-core/services/stack";

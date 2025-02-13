@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
-import chalk from "chalk";
 import {
+  AuthenticationService,
   BranchService,
-  RepositoryService,
-  GitService,
-  StackService,
   DatabaseService,
+  GitService,
   PullRequestService,
-} from "@graphene/core";
-import open from "open";
+  RepositoryService,
+  StackService,
+} from "@allends/graphene-core";
+import chalk from "chalk";
+import { Command } from "commander";
 import inquirer from "inquirer";
-import { eq } from "drizzle-orm";
+import open from "open";
 import { formatBranchName } from "./utils/format";
-import { AuthenticationService } from "@graphene/core/services/authentication";
 
 const program = new Command();
 

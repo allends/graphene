@@ -1,4 +1,4 @@
-import type { StackedBranch } from "@graphene/core/services/branches";
+import type { StackedBranch } from "@allends/graphene-core/services/branches";
 import chalk from "chalk";
 
 type FormatBranchNameParams =

@@ -1,7 +1,7 @@
-import { GitService } from "@graphene/core";
-import { DatabaseService } from "@graphene/database/src";
+import { GitService } from "@allends/graphene-core";
+import { DatabaseService } from "@allends/graphene-database/src";
 import { eq, sql, and } from "drizzle-orm";
-import { branches, stacks } from "@graphene/database/src/schema";
+import { branches, stacks } from "@allends/graphene-database/src/schema";
 
 export class StackService {
   private static instance: StackService;

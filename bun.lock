@@ -11,13 +11,13 @@
       },
     },
     "apps/cli": {
-      "name": "@graphene/cli",
+      "name": "@allends/graphene-cli",
       "version": "0.0.1",
       "bin": {
         "graphene": "./dist/index.js"
       },
       "dependencies": {
-        "@graphene/core": "workspace:*",
+        "@allends/graphene-core": "workspace:*",
         "chalk": "^5.4.1",
         "commander": "^13.1.0",
         "inquirer": "^12.4.1",
@@ -32,10 +32,10 @@
       },
     },
     "packages/core": {
-      "name": "@graphene/core",
+      "name": "@allends/graphene-core",
       "version": "0.0.1",
       "dependencies": {
-        "@graphene/database": "workspace:*",
+        "@allends/graphene-database": "workspace:*",
         "octokit": "^4.1.1",
       },
       "devDependencies": {
@@ -46,7 +46,8 @@
       },
     },
     "packages/database": {
-      "name": "@graphene/database",
+      "name": "@allends/graphene-database",
+      "version": "0.0.1",
       "dependencies": {
         "@libsql/client": "^0.14.0",
         "better-sqlite3": "^11.8.1",
@@ -63,6 +64,12 @@
     },
   },
   "packages": {
+    "@allends/graphene-cli": ["@allends/graphene-cli@workspace:apps/cli"],
+
+    "@allends/graphene-core": ["@allends/graphene-core@workspace:packages/core"],
+
+    "@allends/graphene-database": ["@allends/graphene-database@workspace:packages/database"],
+
     "@esbuild-kit/core-utils": ["@esbuild-kit/core-utils@3.3.2", "", { "dependencies": { "esbuild": "~0.18.20", "source-map-support": "^0.5.21" } }, "sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ=="],
 
     "@esbuild-kit/esm-loader": ["@esbuild-kit/esm-loader@2.6.5", "", { "dependencies": { "@esbuild-kit/core-utils": "^3.3.2", "get-tsconfig": "^4.7.0" } }, "sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA=="],
@@ -112,12 +119,6 @@
     "@esbuild/win32-ia32": ["@esbuild/win32-ia32@0.19.12", "", { "os": "win32", "cpu": "ia32" }, "sha512-+ZOE6pUkMOJfmxmBZElNOx72NKpIa/HFOMGzu8fqzQJ5kgf6aTGrcJaFsNiVMH4JKpMipyK+7k0n2UXN7a8YKQ=="],
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.19.12", "", { "os": "win32", "cpu": "x64" }, "sha512-T1QyPSDCyMXaO3pzBkF96E8xMkiRYbUEZADd29SyPGabqxMViNoii+NcK7eWJAEoU6RZyEm5lVSIjTmcdoB9HA=="],
-
-    "@graphene/cli": ["@graphene/cli@workspace:apps/cli"],
-
-    "@graphene/core": ["@graphene/core@workspace:packages/core"],
-
-    "@graphene/database": ["@graphene/database@workspace:packages/database"],
 
     "@hono/node-server": ["@hono/node-server@1.13.8", "", { "peerDependencies": { "hono": "^4" } }, "sha512-fsn8ucecsAXUoVxrUil0m13kOEq4mkX4/4QozCqmY+HpGfKl74OYSn8JcMA8GnG0ClfdRI4/ZSeG7zhFaVg+wg=="],
 
@@ -233,7 +234,7 @@
 
     "@types/bun": ["@types/bun@1.2.2", "", { "dependencies": { "bun-types": "1.2.2" } }, "sha512-tr74gdku+AEDN5ergNiBnplr7hpDp3V1h7fqI2GcR/rsUaM39jpSeKH0TFibRvU0KwniRx5POgaYnaXbk0hU+w=="],
 
-    "@types/node": ["@types/node@22.13.1", "", { "dependencies": { "undici-types": "~6.20.0" } }, "sha512-jK8uzQlrvXqEU91UxiK5J7pKHyzgnI1Qnl0QDHIgVGuolJhRb9EEl28Cj9b3rGR8B2lhFCtvIm5os8lFnO/1Ew=="],
+    "@types/node": ["@types/node@22.13.2", "", { "dependencies": { "undici-types": "~6.20.0" } }, "sha512-Z+r8y3XL9ZpI2EY52YYygAFmo2/oWfNSj4BCpAXE2McAexDk8VcnBMGC9Djn9gTKt4d2T/hhXqmPzo4hfIXtTg=="],
 
     "@types/ws": ["@types/ws@8.5.14", "", { "dependencies": { "@types/node": "*" } }, "sha512-bd/YFLW+URhBzMXurx7lWByOu+xzU9+kb3RboOteXYDfW+tr+JZa99OyNmPINEGB/ahzKrEuc8rcv4gnpJmxTw=="],
 

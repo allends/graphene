@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
 import { eq } from "drizzle-orm";
-import { DatabaseService, branches, stacks } from "@graphene/database";
+import { DatabaseService, branches, stacks } from "@allends/graphene-database";
 
 export interface Branch {
   name: string;

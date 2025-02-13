@@ -1,7 +1,7 @@
 import { GitService } from "./git";
-import { DatabaseService } from "@graphene/database/src";
+import { DatabaseService } from "@allends/graphene-database/src";
 import { and, eq } from "drizzle-orm";
-import { branches } from "@graphene/database/src/schema";
+import { branches } from "@allends/graphene-database/src/schema";
 import { spawn } from "child_process";
 
 export class PullRequestService {
