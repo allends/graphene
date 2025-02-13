@@ -209,28 +209,83 @@ program
       // Get branches grouped by stack
       const groupedBranches = await branchService.listBranches();
 
+      // Get the base branch (main or master)
+      const baseBranch = await gitService
+        .executeGitCommand([
+          "rev-parse",
+          "--abbrev-ref",
+          "HEAD",
+          "--symbolic-full-name",
+          "@{u}",
+        ])
+        .then((result) => {
+          if (result.exitCode === 0) {
+            return result.output.split("/")[1];
+          }
+          return gitService
+            .executeGitCommand(["branch", "--list", "main", "master"])
+            .then((result) => {
+              const branches = result.output
+                .split("\n")
+                .map((b) => b.trim().replace("* ", ""));
+              return branches.find((b) => b) || "main";
+            });
+        });
+
       // Format choices for inquirer
-      const choices = Object.entries(groupedBranches).flatMap(
-        ([stackName, branches]) => [
+      const choices = [
+        new inquirer.Separator(chalk.yellow("\nBase Branch")),
+        {
+          name: `${
+            baseBranch === currentBranch ? chalk.green("* ") : "  "
+          }${baseBranch}`,
+          value: baseBranch,
+          short: baseBranch,
+        },
+        ...Object.entries(groupedBranches).flatMap(([stackName, branches]) => [
           new inquirer.Separator(chalk.yellow(`\n${stackName}`)),
           ...branches.map((branch) => ({
             name: `${branch.current ? chalk.green("* ") : "  "}${branch.name}`,
             value: branch.name,
             short: branch.name,
           })),
-        ]
-      );
+        ]),
+      ];
+
+      // Set up readline interface to handle 'q' keypress
+      const rl = require("readline").createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      // Handle 'q' keypress
+      process.stdin.on("keypress", (str, key) => {
+        if (key.name === "q") {
+          console.log(chalk.gray("\nCheckout cancelled\n"));
+          rl.close();
+          process.exit(0);
+        }
+      });
+
+      // Enable keypress events
+      process.stdin.setRawMode(true);
+      process.stdin.resume();
 
       const { selectedBranch } = await inquirer.prompt([
         {
           type: "list",
           name: "selectedBranch",
-          message: "Select branch to checkout:",
+          message: "Select branch to checkout (press 'q' to quit):",
           default: currentBranch,
           pageSize: 20,
           choices,
         },
       ]);
+
+      // Clean up readline interface
+      rl.close();
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
 
       if (selectedBranch === currentBranch) {
         console.log(

@@ -36,25 +36,49 @@ bun link
 graphene --help
 
 # Initialize a new repository
-graphene init
+`graphene init`
+
+Creates a new repository in the current directory, adds all files to the staging area, and commits them.
 
 # Create a new branch in a stack
-graphene branch feature/login
+`graphene create <name>`
+# or
+`graphene c <name>`
+
+Commits all changes and creates a new branch in the current stack. If no stack is found, it will create a new stack.
 
 # List all branches grouped by stack
-graphene branches
+`graphene branches`
+
+Lists all branches grouped by stack. Only your stacks (local) are shown.
 
 # Interactively checkout branches
-graphene checkout
+`graphene checkout`
 # or
-graphene co
+`graphene co`
+
+Interactively lists all branches and allows you to checkout a branch. Use jk and arrow keys to navigate.
+
+TODO: press "f" to open up an input to filter through branches.
+TODO: press "s" to search the origin for branches.
+
+# Modify the current branch in a stack
+`graphene modify [-a]`
+# or
+`graphene m [-a]`
+
+Adds a new commit to the current branch. If `-a` is provided, it will amend the last commit.
+
+# Execute Git commands directly
+`graphene git <args...>`
+
 ```
 
 ## Commands
 
 - `info` - Display information about Graphene CLI
 - `init` - Initialize a new Git repository
-- `branch <name>` - Create a new branch in a stack
+- `create <name>` - Create a new branch in a stack
 - `branches` - List all branches grouped by stack
 - `checkout` - Interactively checkout a branch
 - `git [args...]` - Execute Git commands directly

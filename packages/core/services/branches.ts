@@ -64,6 +64,10 @@ export class BranchService {
         });
       });
 
+      if (grouped["No Stack"].length === 0) {
+        delete grouped["No Stack"];
+      }
+
       return grouped;
     } catch (error) {
       throw new Error(

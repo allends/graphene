@@ -3,8 +3,15 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "bin": {
+    "graphene": "./apps/cli/index.ts"
+  },
   "scripts": {
-    "dev": "bun run apps/cli/index.ts"
+    "dev": "bun run apps/cli/index.ts",
+    "build": "bun build ./apps/cli/index.ts --compile --outfile graphene --target node",
+    "link-binary": "chmod +x graphene && sudo ln -sf \"$(pwd)/graphene\" /usr/local/bin/graphene",
+    "install-cli": "bun run build && bun run link-binary",
+    "uninstall-cli": "sudo rm -f /usr/local/bin/graphene && rm -f graphene"
   },
   "workspaces": [
     "packages/*",
