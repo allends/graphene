@@ -401,5 +401,8 @@ program
     }
   });
 
+// these are some changes to the file
+const foo = "bar";
+
 // Parse command line arguments
 program.parse();
