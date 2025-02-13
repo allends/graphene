@@ -9,9 +9,11 @@ import {
   RepositoryService,
   GitService,
   StackService,
+  DatabaseService,
 } from "@graphene/core";
 import open from "open";
 import inquirer from "inquirer";
+import { eq } from "drizzle-orm";
 
 const program = new Command();
 
@@ -373,6 +375,65 @@ program
     } catch (error) {
       console.error(
         chalk.red("\nFailed to execute git command:"),
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      process.exit(1);
+    }
+  });
+
+program
+  .command("restack")
+  .description("Rebase the current stack onto its base branch")
+  .action(async () => {
+    try {
+      const gitService = GitService.getInstance();
+      const stackService = StackService.getInstance();
+      const db = DatabaseService.getInstance();
+
+      // Get current branch
+      const currentBranch = await gitService.getCurrentBranch();
+      console.log(chalk.blue("\nDetecting current stack..."));
+
+      // Find the stack for the current branch
+      const stack = await stackService.getCurrentStack();
+
+      // Get the base branch (main or master)
+      const baseBranch = await gitService
+        .executeGitCommand([
+          "rev-parse",
+          "--abbrev-ref",
+          "HEAD",
+          "--symbolic-full-name",
+          "@{u}",
+        ])
+        .then((result) => {
+          if (result.exitCode === 0) {
+            return result.output.split("/")[1];
+          }
+          return gitService
+            .executeGitCommand(["branch", "--list", "main", "master"])
+            .then((result) => {
+              const branches = result.output
+                .split("\n")
+                .map((b) => b.trim().replace("* ", ""));
+              return branches.find((b) => b) || "main";
+            });
+        });
+
+      console.log(
+        chalk.blue(`\nRebasing stack`),
+        chalk.yellow(stack.stack_name),
+        chalk.blue("onto"),
+        chalk.yellow(baseBranch),
+        chalk.blue("...")
+      );
+
+      await stackService.rebaseStack(stack.stack_id, baseBranch);
+
+      console.log(chalk.green("\n✓ Successfully rebased stack\n"));
+    } catch (error) {
+      console.error(
+        chalk.red("\nFailed to rebase stack:"),
         error instanceof Error ? error.message : "Unknown error"
       );
       process.exit(1);

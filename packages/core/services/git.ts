@@ -164,4 +164,56 @@ export class GitService {
       child.on("error", reject);
     });
   }
+
+  /**
+   * Rebases one branch onto another
+   * @param sourceBranch The branch to be rebased
+   * @param targetBranch The branch to rebase onto
+   * @throws Error if the rebase fails or encounters conflicts
+   */
+  public async rebaseBranches(
+    sourceBranch: string,
+    targetBranch: string
+  ): Promise<void> {
+    // First checkout the source branch
+    const checkoutResult = await this.executeGitCommand([
+      "checkout",
+      sourceBranch,
+    ]);
+    if (checkoutResult.exitCode !== 0) {
+      throw new Error(
+        `Failed to checkout source branch: ${
+          checkoutResult.error || "Unknown error"
+        }`
+      );
+    }
+
+    // Perform the rebase with proper TTY handling for potential conflict resolution
+    const child = spawn("git", ["rebase", targetBranch], {
+      stdio: "inherit", // This connects the child process to the parent's TTY
+      env: {
+        ...process.env,
+        GIT_EDITOR: process.env.VISUAL || process.env.EDITOR || "vim",
+      },
+    });
+
+    return new Promise((resolve, reject) => {
+      child.on("exit", (code) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          // If rebase fails, attempt to abort it before rejecting
+          this.executeGitCommand(["rebase", "--abort"]).finally(() => {
+            reject(new Error("Rebase failed - conflicts encountered"));
+          });
+        }
+      });
+      child.on("error", (error) => {
+        // If spawn fails, attempt to abort rebase before rejecting
+        this.executeGitCommand(["rebase", "--abort"]).finally(() => {
+          reject(new Error(`Failed to rebase: ${error.message}`));
+        });
+      });
+    });
+  }
 }

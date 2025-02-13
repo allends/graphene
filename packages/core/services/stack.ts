@@ -20,6 +20,50 @@ export class StackService {
     return StackService.instance;
   }
 
+  /**
+   * Gets the current stack based on the current branch
+   * @returns The stack information or null if not in a stack
+   */
+  public async getCurrentStack(): Promise<{
+    stack_id: number;
+    stack_name: string;
+    branch_count: number;
+  }> {
+    try {
+      const currentBranch = await this.git.getCurrentBranch();
+
+      // Find the stack for the current branch
+      const [stackData] = await this.db
+        .getDb()
+        .select({
+          stack_id: stacks.id,
+          stack_name: stacks.name,
+          branch_count: sql<number>`count(${branches.id})`.as("branch_count"),
+        })
+        .from(branches)
+        .leftJoin(stacks, eq(branches.stack_id, stacks.id))
+        .where(eq(branches.name, currentBranch))
+        .groupBy(stacks.id, stacks.name)
+        .limit(1);
+
+      if (!stackData.stack_id || !stackData.stack_name) {
+        throw new Error("current branch is not part of a stack");
+      }
+
+      return {
+        stack_id: stackData.stack_id,
+        stack_name: stackData.stack_name,
+        branch_count: Number(stackData.branch_count),
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to get current stack: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
   public async createBranchInStack(branchName: string): Promise<void> {
     try {
       // Get current branch
@@ -101,6 +145,55 @@ export class StackService {
     } catch (error) {
       throw new Error(
         `Failed to create branch in stack: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Rebases an entire stack sequentially, starting from the base branch
+   * @param stackId The ID of the stack to rebase
+   * @param baseBranch The branch to rebase the stack onto (e.g., 'main')
+   */
+  public async rebaseStack(stackId: number, baseBranch: string): Promise<void> {
+    try {
+      // Get all branches in the stack, ordered by position
+      const stackBranches = await this.db
+        .getDb()
+        .select()
+        .from(branches)
+        .where(eq(branches.stack_id, stackId))
+        .orderBy(branches.position);
+
+      if (stackBranches.length === 0) {
+        throw new Error("No branches found in stack");
+      }
+
+      // Store the current branch to return to it later
+      const originalBranch = await this.git.getCurrentBranch();
+
+      try {
+        // Start with rebasing the first branch onto the base branch
+        await this.git.rebaseBranches(stackBranches[0].name, baseBranch);
+
+        // Then rebase each subsequent branch onto the previous one
+        for (let i = 1; i < stackBranches.length; i++) {
+          const currentBranch = stackBranches[i].name;
+          const previousBranch = stackBranches[i - 1].name;
+          await this.git.rebaseBranches(currentBranch, previousBranch);
+        }
+
+        // Return to the original branch
+        await this.git.checkoutBranch(originalBranch);
+      } catch (error) {
+        // If any rebase fails, return to original branch before throwing
+        await this.git.checkoutBranch(originalBranch);
+        throw error;
+      }
+    } catch (error) {
+      throw new Error(
+        `Failed to rebase stack: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
