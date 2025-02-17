@@ -154,48 +154,56 @@ export class GitService {
    * @param message Optional commit message. If not provided, opens the default editor
    */
   public async commitAll(message?: string): Promise<void> {
-    // Add all changes
-    const addResult = await this.executeGitCommand(["add", "."]);
-    if (addResult.exitCode !== 0) {
-      throw new Error(
-        `Failed to add changes: ${addResult.error || "Unknown error"}`
-      );
-    }
+    try {
+      // Add all changes
+      const addResult = await this.executeGitCommand(["add", "."]);
+      if (addResult.exitCode !== 0) {
+        throw new Error(
+          `Failed to add changes: ${addResult.error || "Unknown error"}`
+        );
+      }
 
-    // Create the commit
-    const commitArgs = ["commit"];
-    if (message) {
-      commitArgs.push("-m", message);
-    }
+      // Create the commit
+      const commitArgs = ["commit"];
+      if (message) {
+        commitArgs.push("-m", message);
+      }
 
-    // When no message is provided, we need to spawn git with proper TTY handling
-    if (!message) {
-      const editor = process.env.VISUAL || process.env.EDITOR || "vim";
-      const child = spawn("git", commitArgs, {
-        stdio: "inherit", // This connects the child process to the parent's TTY
-        env: {
-          ...process.env,
-          GIT_EDITOR: editor,
-        },
-      });
-
-      return new Promise((resolve, reject) => {
-        child.on("exit", (code) => {
-          if (code === 0) {
-            resolve();
-          } else {
-            reject(new Error("Failed to create commit"));
-          }
+      // When no message is provided, we need to spawn git with proper TTY handling
+      if (!message) {
+        const editor = process.env.VISUAL || process.env.EDITOR || "vim";
+        const child = spawn("git", commitArgs, {
+          stdio: "inherit", // This connects the child process to the parent's TTY
+          env: {
+            ...process.env,
+            GIT_EDITOR: editor,
+          },
         });
-        child.on("error", reject);
-      });
-    }
 
-    // If message was provided, use the normal executeGitCommand
-    const commitResult = await this.executeGitCommand(commitArgs);
-    if (commitResult.exitCode !== 0) {
+        return new Promise((resolve, reject) => {
+          child.on("exit", (code) => {
+            if (code === 0) {
+              resolve();
+            } else {
+              reject(new Error("Failed to create commit"));
+            }
+          });
+          child.on("error", reject);
+        });
+      }
+
+      // If message was provided, use the normal executeGitCommand
+      const commitResult = await this.executeGitCommand(commitArgs);
+      if (commitResult.exitCode !== 0) {
+        throw new Error(
+          `Failed to create commit: ${commitResult.error || "Unknown error"}`
+        );
+      }
+    } catch (error) {
       throw new Error(
-        `Failed to create commit: ${commitResult.error || "Unknown error"}`
+        `Failed to commit changes: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
       );
     }
   }

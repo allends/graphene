@@ -1,15 +1,59 @@
-# database
+# @allends/graphene-database
 
-To install dependencies:
+Database layer for the Graphene CLI, handling persistence of branch stacks and relationships.
 
-```bash
-bun install
+## Features
+
+- SQLite database management
+- Schema definitions
+- Migration support
+- Type-safe queries
+
+## Schema
+
+### Stacks
+
+```typescript
+export const stacks = sqliteTable("stacks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  repository_name: text("repository_name").notNull(),
+  name: text("name").notNull(),
+  base_branch: text("base_branch").notNull(),
+  description: text("description"),
+  created_at: integer("created_at", { mode: "timestamp" }),
+  updated_at: integer("updated_at", { mode: "timestamp" }),
+});
 ```
 
-To run:
+### Branches
 
-```bash
-bun run index.ts
+```typescript
+export const branches = sqliteTable("branches", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  stack_id: integer("stack_id"),
+  parent_branch_id: integer("parent_branch_id"),
+  position: integer("position").notNull(),
+  status: text("status").notNull(),
+  latest_commit: text("latest_commit"),
+  created_at: integer("created_at", { mode: "timestamp" }),
+  updated_at: integer("updated_at", { mode: "timestamp" }),
+});
 ```
 
-This project was created using `bun init` in bun v1.2.1. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+## Usage
+
+```typescript
+import { DatabaseService } from "@allends/graphene-database";
+
+const db = DatabaseService.getInstance();
+await db.createStack("my-stack", "repo-name", "main");
+```
+
+## Development
+
+Built with:
+
+- Drizzle ORM
+- SQLite
+- Bun

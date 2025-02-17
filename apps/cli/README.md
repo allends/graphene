@@ -1,15 +1,40 @@
-# cli
+# @allends/graphene-cli
 
-To install dependencies:
+Command-line interface for Graphene, providing Git branch stack management tools.
+
+## Features
+
+- Interactive branch checkout
+- Branch stack management
+- Remote branch search
+- GitHub integration
+- Commit management
+
+## Commands
+
+- `graphene list` (alias: `ls`) - List branches by stack
+- `graphene checkout` (alias: `co`) - Interactive branch checkout
+- `graphene create <name>` (alias: `c`) - Create branch in stack
+- `graphene search` (alias: `s`) - Search remote branches
+- `graphene modify` (alias: `m`) - Modify current branch
+- `graphene auth` - GitHub authentication
+- `graphene git <args...>` - Direct Git commands
+
+## Installation
 
 ```bash
-bun install
+# Install globally
+bun install -g @allends/graphene-cli
+
+# Or link locally
+bun link
 ```
 
-To run:
+## Development
 
-```bash
-bun run index.ts
-```
+Built with:
 
-This project was created using `bun init` in bun v1.2.1. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+- Commander.js
+- Inquirer
+- Chalk
+- Bun

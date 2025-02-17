@@ -70,7 +70,6 @@ Lists all branches grouped by stack. Only your stacks (local) are shown.
 Interactively lists all branches and allows you to checkout a branch. Use jk and arrow keys to navigate.
 
 TODO: press "f" to open up an input to filter through branches.
-TODO: press "s" to search the origin for branches.
 
 # Modify the current branch in a stack
 `graphene modify [-a]`
@@ -82,15 +81,24 @@ Adds a new commit to the current branch. If `-a` is provided, it will amend the 
 # Execute Git commands directly
 `graphene git <args...>`
 
+# Search remote branches
+graphene search
+# or
+graphene s
+
+Type your search query and use arrow keys to select from matching branches.
 ```
 
 ## Commands
 
 - `info` - Display information about Graphene CLI
 - `init` - Initialize a new Git repository
+- `auth` - Authenticate with GitHub
 - `create <name>` - Create a new branch in a stack
-- `branches` - List all branches grouped by stack
+- `list` - List all branches grouped by stack
 - `checkout` - Interactively checkout a branch
+- `search` - Search and checkout remote branches
+- `modify` - Add or amend changes to the current branch
 - `git [args...]` - Execute Git commands directly
 
 ## Development
