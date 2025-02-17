@@ -92,7 +92,7 @@ Type your search query and use arrow keys to select from matching branches.
 graphene continue
 
 # The command will either:
-# - Continue the rebase if all conflicts are resolved
+# - Continue ahhhhhhh the rebase if all conflicts are resolved
 # - Show remaining conflicts if any exist
 ```
 
