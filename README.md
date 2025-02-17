@@ -14,10 +14,18 @@ Graphene is a command-line tool that helps developers manage their Git branches 
 - ✅ Creating branches based off of other branches (`graphene branch <name>`)
 - ✅ Listing branches with stack grouping (`graphene branches`)
 - ✅ Local Git repository initialization (`graphene init`)
-- ⏳ Rebasing branches when there is a change on an upstream branch
-- ⏳ Pushing branches to GitHub
+- ✅ GitHub authentication (`graphene auth`)
+- ✅ Branch modification with auto-add (`graphene modify` or `graphene m`)
+- ✅ Stack creation and management
+- ✅ Branch position tracking in stacks
+- ✅ Commit tracking per branch
+- 🚧 Rebasing branches when there is a change on an upstream branch
+- 🚧 Pushing branches to GitHub
+- 🚧 Creating pull requests
 - ⏳ Pulling branches from GitHub
-- ⏳ Creating pull requests
+- ⏳ Stack visualization
+- ⏳ Interactive rebase management
+- ⏳ Conflict resolution assistance
 
 ## Installation
 
@@ -48,7 +56,9 @@ Creates a new repository in the current directory, adds all files to the staging
 Commits all changes and creates a new branch in the current stack. If no stack is found, it will create a new stack.
 
 # List all branches grouped by stack
-`graphene branches`
+`graphene list`
+# or
+`graphene ls`
 
 Lists all branches grouped by stack. Only your stacks (local) are shown.
 
