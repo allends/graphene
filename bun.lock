@@ -3,6 +3,9 @@
   "workspaces": {
     "": {
       "name": "graphene",
+      "dependencies": {
+        "chalk": "^5.4.1",
+      },
       "devDependencies": {
         "@types/bun": "latest",
       },
@@ -12,7 +15,7 @@
     },
     "apps/cli": {
       "name": "@allends/graphene-cli",
-      "version": "0.0.7",
+      "version": "0.0.8",
       "bin": {
         "graphene": "./dist/index.js"
       },
