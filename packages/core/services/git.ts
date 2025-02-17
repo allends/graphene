@@ -293,6 +293,50 @@ export class GitService {
     return await this.executeGitCommand(args);
   }
 
+  /**
+   * Searches for branches in the remote repository that match the given query
+   * @param query The search query string
+   * @returns Array of branch names that match the query
+   */
+  public async searchRemoteBranches(query: string): Promise<string[]> {
+    try {
+      // First, fetch the latest from remote
+      await this.executeGitCommand(["fetch", "origin"]);
+
+      // Get all remote branches and filter by query
+      const { output, exitCode } = await this.executeGitCommand([
+        "branch",
+        "-r", // Show remote branches
+        "--format=%(refname:short)", // Only show branch names
+        "--sort=-committerdate", // Sort by most recent commit
+        `--list`, // List mode
+        `*${query}*`, // Match pattern
+      ]);
+
+      if (exitCode !== 0) {
+        throw new Error("Failed to search remote branches");
+      }
+
+      // Process the output
+      return (
+        output
+          .split("\n")
+          .map((branch) => branch.trim())
+          // Remove 'origin/' prefix and empty lines
+          .filter((branch) => branch && branch.startsWith("origin/"))
+          .map((branch) => branch.replace("origin/", ""))
+          // Remove HEAD reference if present
+          .filter((branch) => branch !== "HEAD")
+      );
+    } catch (error) {
+      throw new Error(
+        `Failed to search remote branches: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
   private async executeGitCommand(args: string[]): Promise<{
     output: string;
     error: string;

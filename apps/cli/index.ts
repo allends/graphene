@@ -11,6 +11,7 @@ import {
 import chalk from "chalk";
 import { Command } from "commander";
 import inquirer from "inquirer";
+import { search } from "@inquirer/prompts";
 import open from "open";
 import { formatBranchName } from "./utils/format";
 
@@ -419,6 +420,49 @@ program
     } catch (error) {
       console.error(
         chalk.red("\nFailed to login:"),
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      process.exit(1);
+    }
+  });
+
+program
+  .command("search")
+  .alias("s")
+  .description("Search and checkout remote branches")
+  .action(async () => {
+    try {
+      const gitService = GitService.getInstance();
+      let searchResults: string[] = [];
+
+      const selectedBranch = await search({
+        message: "Select a branch to checkout",
+        source: async (input, { signal }) => {
+          if (!input) {
+            return [];
+          }
+
+          const remoteBranches = await gitService.searchRemoteBranches(input);
+
+          return remoteBranches.map((branch) => ({
+            name: branch,
+            value: branch,
+          }));
+        },
+      });
+
+      if (selectedBranch) {
+        console.log(chalk.blue(`\nChecking out branch: ${selectedBranch}`));
+        await gitService.checkoutBranch(selectedBranch);
+        console.log(
+          chalk.green("\n✓ Successfully checked out branch:"),
+          chalk.blue(selectedBranch),
+          "\n"
+        );
+      }
+    } catch (error) {
+      console.error(
+        chalk.red("\nFailed to search branches:"),
         error instanceof Error ? error.message : "Unknown error"
       );
       process.exit(1);
