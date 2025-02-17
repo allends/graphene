@@ -82,7 +82,8 @@ program
   });
 
 program
-  .command("branches")
+  .command("list")
+  .alias("ls")
   .description("List all branches grouped by stack")
   .action(async () => {
     try {
