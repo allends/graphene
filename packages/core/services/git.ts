@@ -245,52 +245,54 @@ export class GitService {
    * Rebases one branch onto another
    * @param sourceBranch The branch to be rebased
    * @param targetBranch The branch to rebase onto
-   * @throws Error if the rebase fails or encounters conflicts
+   * @returns Object containing success status and any conflicts
    */
   public async rebaseBranches(
     sourceBranch: string,
     targetBranch: string
-  ): Promise<void> {
-    // First checkout the source branch
-    const checkoutResult = await this.executeGitCommand([
-      "checkout",
-      sourceBranch,
-    ]);
-    if (checkoutResult.exitCode !== 0) {
+  ): Promise<{ success: boolean; conflicts?: string[] }> {
+    try {
+      // First checkout the source branch
+      const checkoutResult = await this.executeGitCommand([
+        "checkout",
+        sourceBranch,
+      ]);
+      if (checkoutResult.exitCode !== 0) {
+        throw new Error(
+          `Failed to checkout source branch: ${
+            checkoutResult.error || "Unknown error"
+          }`
+        );
+      }
+
+      // Perform the rebase
+      const { exitCode, error } = await this.executeGitCommand([
+        "rebase",
+        targetBranch,
+      ]);
+
+      if (exitCode === 0) {
+        return { success: true };
+      }
+
+      // If rebase failed, check for conflicts
+      const { output: conflicts } = await this.executeGitCommand([
+        "diff",
+        "--name-only",
+        "--diff-filter=U",
+      ]);
+
+      return {
+        success: false,
+        conflicts: conflicts.split("\n").filter(Boolean),
+      };
+    } catch (error) {
       throw new Error(
-        `Failed to checkout source branch: ${
-          checkoutResult.error || "Unknown error"
+        `Failed to rebase: ${
+          error instanceof Error ? error.message : "Unknown error"
         }`
       );
     }
-
-    // Perform the rebase with proper TTY handling for potential conflict resolution
-    const child = spawn("git", ["rebase", targetBranch], {
-      stdio: "inherit", // This connects the child process to the parent's TTY
-      env: {
-        ...process.env,
-        GIT_EDITOR: process.env.VISUAL || process.env.EDITOR || "vim",
-      },
-    });
-
-    return new Promise((resolve, reject) => {
-      child.on("exit", (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          // If rebase fails, attempt to abort it before rejecting
-          this.executeGitCommand(["rebase", "--abort"]).finally(() => {
-            reject(new Error("Rebase failed - conflicts encountered"));
-          });
-        }
-      });
-      child.on("error", (error) => {
-        // If spawn fails, attempt to abort rebase before rejecting
-        this.executeGitCommand(["rebase", "--abort"]).finally(() => {
-          reject(new Error(`Failed to rebase: ${error.message}`));
-        });
-      });
-    });
   }
 
   public async gitPassthrough(args: string[]): Promise<{
@@ -378,6 +380,61 @@ export class GitService {
     } catch (error) {
       throw new Error(
         `Failed to execute git command: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Checks if a rebase is currently in progress
+   * @returns true if a rebase is in progress
+   */
+  public async isRebaseInProgress(): Promise<boolean> {
+    try {
+      const { output } = await this.executeGitCommand(["status"]);
+      return output.includes("rebase in progress");
+    } catch (error) {
+      throw new Error(
+        `Failed to check rebase status: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Continues a rebase in progress
+   * @returns Object containing success status and any conflicts
+   */
+  public async continueRebase(): Promise<{
+    success: boolean;
+    conflicts?: string[];
+  }> {
+    try {
+      const { exitCode, error } = await this.executeGitCommand([
+        "rebase",
+        "--continue",
+      ]);
+
+      if (exitCode === 0) {
+        return { success: true };
+      }
+
+      // Get list of conflicting files
+      const { output: conflicts } = await this.executeGitCommand([
+        "diff",
+        "--name-only",
+        "--diff-filter=U",
+      ]);
+
+      return {
+        success: false,
+        conflicts: conflicts.split("\n").filter(Boolean),
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to continue rebase: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       );

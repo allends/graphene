@@ -175,7 +175,10 @@ export class StackService {
     stackId: number;
     baseBranch: string;
     currentBranch?: string;
-  }): Promise<void> {
+  }): Promise<{
+    success: boolean;
+    conflicts?: { branch: string; files: string[] };
+  }> {
     try {
       // Get all branches in the stack, ordered by position
       const stackBranches = await this.db
@@ -194,24 +197,57 @@ export class StackService {
 
       try {
         // Start with rebasing the first branch onto the base branch
-        await this.git.rebaseBranches(stackBranches[0].name, baseBranch);
+        const firstRebase = await this.git.rebaseBranches(
+          stackBranches[0].name,
+          baseBranch
+        );
+
+        if (!firstRebase.success) {
+          return {
+            success: false,
+            conflicts: {
+              branch: stackBranches[0].name,
+              files: firstRebase.conflicts || [],
+            },
+          };
+        }
 
         // Then rebase each subsequent branch onto the previous one
         for (let i = 1; i < stackBranches.length; i++) {
           const rebasingBranch = stackBranches[i].name;
           const previousBranch = stackBranches[i - 1].name;
-          await this.git.rebaseBranches(rebasingBranch, previousBranch);
+
+          const rebaseResult = await this.git.rebaseBranches(
+            rebasingBranch,
+            previousBranch
+          );
+
+          if (!rebaseResult.success) {
+            return {
+              success: false,
+              conflicts: {
+                branch: rebasingBranch,
+                files: rebaseResult.conflicts || [],
+              },
+            };
+          }
 
           if (currentBranch && rebasingBranch === currentBranch) {
             break;
           }
         }
 
-        // Return to the original branch
+        // Return to the original branch if no conflicts occurred
         await this.git.checkoutBranch(originalBranch);
+        return { success: true };
       } catch (error) {
-        // If any rebase fails, return to original branch before throwing
-        await this.git.checkoutBranch(originalBranch);
+        const isRebaseInProgress = await this.git.isRebaseInProgress();
+
+        // Only return to original branch if no rebase is in progress
+        if (!isRebaseInProgress) {
+          await this.git.checkoutBranch(originalBranch);
+        }
+
         throw error;
       }
     } catch (error) {

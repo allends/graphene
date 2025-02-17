@@ -87,6 +87,13 @@ graphene search
 graphene s
 
 Type your search query and use arrow keys to select from matching branches.
+
+# After resolving rebase conflicts
+graphene continue
+
+# The command will either:
+# - Continue the rebase if all conflicts are resolved
+# - Show remaining conflicts if any exist
 ```
 
 ## Commands
@@ -100,6 +107,7 @@ Type your search query and use arrow keys to select from matching branches.
 - `search` - Search and checkout remote branches
 - `modify` - Add or amend changes to the current branch
 - `git [args...]` - Execute Git commands directly
+- `continue` - Continue a rebase after resolving conflicts
 
 ## Development
 
