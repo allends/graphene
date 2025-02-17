@@ -21,7 +21,7 @@ const program = new Command();
 program
   .name("graphene")
   .description("A local version of the Graphite CLI for Git branch management")
-  .version("0.0.1");
+  .version("0.0.10");
 
 // Add a default command to show basic information
 program
@@ -323,7 +323,7 @@ program
       const stack = await stackService.getCurrentStack();
 
       // Get the base branch (main or master)
-      const baseBranch = await gitService.getBaseBranch();
+      const baseBranch = stack.base_branch;
 
       console.log(
         chalk.blue(`\nRebasing stack`),

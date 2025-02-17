@@ -28,9 +28,12 @@ export class StackService {
     stack_id: number;
     stack_name: string;
     branch_count: number;
+    base_branch: string;
   }> {
     try {
       const currentBranch = await this.git.getCurrentBranch();
+
+      const fallbackBranch = await this.git.getBaseBranch();
 
       // Find the stack for the current branch
       const [stackData] = await this.db
@@ -39,6 +42,7 @@ export class StackService {
           stack_id: stacks.id,
           stack_name: stacks.name,
           branch_count: sql<number>`count(${branches.id})`.as("branch_count"),
+          base_branch: stacks.base_branch,
         })
         .from(branches)
         .leftJoin(stacks, eq(branches.stack_id, stacks.id))
@@ -54,6 +58,7 @@ export class StackService {
         stack_id: stackData.stack_id,
         stack_name: stackData.stack_name,
         branch_count: Number(stackData.branch_count),
+        base_branch: stackData.base_branch || fallbackBranch,
       };
     } catch (error) {
       throw new Error(
