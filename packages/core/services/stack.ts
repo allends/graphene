@@ -64,7 +64,11 @@ export class StackService {
     }
   }
 
-  public async createBranchInStack(branchName: string): Promise<void> {
+  public async createBranchInStack({
+    branchName,
+  }: {
+    branchName: string;
+  }): Promise<void> {
     try {
       // Get repository name
       const repositoryName = await this.git.getRepositoryName();
@@ -77,7 +81,13 @@ export class StackService {
         .getDb()
         .select()
         .from(branches)
-        .where(eq(branches.name, currentBranch))
+        .innerJoin(stacks, eq(branches.stack_id, stacks.id))
+        .where(
+          and(
+            eq(branches.name, currentBranch),
+            eq(stacks.repository_name, repositoryName)
+          )
+        )
         .limit(1);
 
       let stackId: number;
@@ -86,9 +96,9 @@ export class StackService {
 
       if (currentBranchData.length > 0) {
         // Branch is in a stack, use that stack
-        stackId = currentBranchData[0].stack_id!;
-        position = currentBranchData[0].position + 1;
-        parentBranchId = currentBranchData[0].id;
+        stackId = currentBranchData[0].stacks.id!;
+        position = currentBranchData[0].branches.position! + 1;
+        parentBranchId = currentBranchData[0].branches.id;
 
         // Increment position of all branches after this one
         await this.db
@@ -98,7 +108,7 @@ export class StackService {
           .where(
             and(
               eq(branches.stack_id, stackId),
-              sql`position > ${currentBranchData[0].position}`
+              sql`position > ${currentBranchData[0].branches.position}`
             )
           );
       } else {
@@ -147,11 +157,20 @@ export class StackService {
   }
 
   /**
-   * Rebases an entire stack sequentially, starting from the base branch
+   * Rebases an entire stack sequentially, starting from the base branch up to the current branch
    * @param stackId The ID of the stack to rebase
    * @param baseBranch The branch to rebase the stack onto (e.g., 'main')
+   * @param currentBranch The current branch to rebase onto the base branch
    */
-  public async rebaseStack(stackId: number, baseBranch: string): Promise<void> {
+  public async rebaseStack({
+    stackId,
+    baseBranch,
+    currentBranch,
+  }: {
+    stackId: number;
+    baseBranch: string;
+    currentBranch?: string;
+  }): Promise<void> {
     try {
       // Get all branches in the stack, ordered by position
       const stackBranches = await this.db
@@ -174,9 +193,13 @@ export class StackService {
 
         // Then rebase each subsequent branch onto the previous one
         for (let i = 1; i < stackBranches.length; i++) {
-          const currentBranch = stackBranches[i].name;
+          const rebasingBranch = stackBranches[i].name;
           const previousBranch = stackBranches[i - 1].name;
-          await this.git.rebaseBranches(currentBranch, previousBranch);
+          await this.git.rebaseBranches(rebasingBranch, previousBranch);
+
+          if (currentBranch && rebasingBranch === currentBranch) {
+            break;
+          }
         }
 
         // Return to the original branch

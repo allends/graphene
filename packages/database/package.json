@@ -1,6 +1,6 @@
 {
   "name": "@allends/graphene-database",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "module": "index.ts",
   "type": "module",
   "publishConfig": {
@@ -16,6 +16,7 @@
   "scripts": {
     "generate": "drizzle-kit generate",
     "migrate": "bun drizzle-kit migrate",
+    "studio": "drizzle-kit studio",
     "build": "bun build ./src/index.ts --outdir ./dist --target bun"
   },
   "dependencies": {

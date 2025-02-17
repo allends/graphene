@@ -125,7 +125,7 @@ program
 
       console.log(chalk.blue("\nCreating branch in stack..."));
 
-      await stackService.createBranchInStack(branchName);
+      await stackService.createBranchInStack({ branchName });
 
       console.log(
         chalk.green("\n✓ Successfully created branch:"),
@@ -333,7 +333,11 @@ program
         chalk.blue("...")
       );
 
-      await stackService.rebaseStack(stack.stack_id, baseBranch);
+      await stackService.rebaseStack({
+        stackId: stack.stack_id,
+        baseBranch,
+        currentBranch,
+      });
 
       console.log(chalk.green("\n✓ Successfully rebased stack\n"));
     } catch (error) {
