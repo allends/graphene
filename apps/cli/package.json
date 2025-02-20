@@ -11,9 +11,9 @@
     "graphene": "./dist/index.js"
   },
   "scripts": {
-    "dev": "bun run --bun index.ts",
     "start": "bun run index.ts",
-    "build": "bun build ./index.ts --outdir ./dist --target bun"
+    "build": "bun build ./index.ts --outdir ./dist --target bun",
+    "dev": "bun run --bun index.ts"
   },
   "files": [
     "dist"
