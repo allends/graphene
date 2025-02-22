@@ -1,5 +1,11 @@
 # @allends/graphene-database
 
+## 0.1.1
+
+### Patch Changes
+
+- Minor Fixes
+
 ## 0.1.0
 
 ### Minor Changes
