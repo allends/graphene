@@ -1,13 +1,18 @@
 {
   "name": "@allends/graphene-database",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "module": "index.ts",
   "type": "module",
   "publishConfig": {
     "access": "public"
   },
   "main": "./dist/index.js",
-  "files": ["dist", "drizzle", "migrations", "src"],
+  "files": [
+    "dist",
+    "drizzle",
+    "migrations",
+    "src"
+  ],
   "scripts": {
     "generate": "drizzle-kit generate",
     "migrate": "bun drizzle-kit migrate",

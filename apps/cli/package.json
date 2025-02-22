@@ -1,6 +1,6 @@
 {
   "name": "@allends/graphene-cli",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Graphene CLI for Git branch management",
   "module": "index.ts",
   "type": "module",
@@ -15,7 +15,9 @@
     "build": "bun build ./index.ts --outdir ./dist --target bun",
     "dev": "bun run --bun index.ts"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
     "@types/bun": "latest"
   },

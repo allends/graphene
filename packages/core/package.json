@@ -1,6 +1,6 @@
 {
   "name": "@allends/graphene-core",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "module": "index.ts",
   "type": "module",
   "publishConfig": {
@@ -18,5 +18,7 @@
   "scripts": {
     "build": "bun build ./index.ts --outdir ./dist --target bun"
   },
-  "files": ["dist"]
+  "files": [
+    "dist"
+  ]
 }
