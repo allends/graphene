@@ -8,16 +8,16 @@ This is a work in progress and not all features are available yet. The goal of t
 
 Graphene is a command-line tool that helps developers manage their Git branches and pull requests more efficiently. It introduces the concept of "stacks" - groups of related branches that build upon each other, making it easier to work on and manage complex feature development.
 
-## Features
+Features:
 
 ✅ = Completed | 🚧 = In Progress | ⏳ = Planned
 
 - ✅ Interactive branch checkout (`graphene checkout` or `graphene co`)
 - ✅ Creating branches based off of other branches (`graphene branch <name>`)
-- ✅ Listing branches with stack grouping (`graphene branches`)
+- ✅ Listing branches with stack grouping (`graphene branch list` or `graphene branch ls`)
 - ✅ Local Git repository initialization (`graphene init`)
 - ✅ GitHub authentication (`graphene login`)
-- ✅ Branch modification with auto-add (`graphene modify` or `graphene m`)
+- ✅ Branch modification with auto-add (`graphene modify`)
 - ✅ Stack creation and management
 - ✅ Branch position tracking in stacks
 - ✅ Commit tracking per branch
@@ -38,7 +38,7 @@ bun install
 
 ## Usage
 
-```bash
+````bash
 # Show help and available commands
 graphene --help
 
@@ -47,51 +47,67 @@ graphene --help
 
 Creates a profile for the current directorys repository.
 
-# Create a new branch in a stack
-`graphene create <name>`
-# or
-`graphene c <name>`
+## Branch Commands
 
-Commits all changes and creates a new branch in the current stack. If no stack is found, it will create a new stack.
-
+```bash
 # List all branches grouped by stack
-`graphene list`
-# or
-`graphene ls`
+graphene branch list
+graphene branch ls
 
-Lists all branches grouped by stack. Only your stacks (local) are shown.
+# Create a new branch in the current stack
+graphene branch create <name>
+graphene branch c <name>
 
-# Interactively checkout branches
-`graphene checkout`
-# or
-`graphene co`
+# Interactively checkout a branch
+graphene branch checkout
+graphene branch co
 
-Interactively lists all branches and allows you to checkout a branch. Use jk and arrow keys to navigate.
+# Search and checkout remote branches
+graphene branch search
+graphene branch s
 
-# Modify the current branch in a stack
-`graphene modify [-a]`
-# or
-`graphene m [-a]`
+# Track a branch in the current stack
+graphene branch track <branch>
 
-Adds a new commit to the current branch. If `-a` is provided, it will amend the last commit.
+# Remove a branch from its stack
+graphene branch untrack <branch>
 
-# Execute Git commands directly
-`graphene git <args...>`
+# Squash all commits on current branch
+graphene branch squash [-m <message>]
 
-# Search remote branches
-graphene search
-# or
-graphene s
+# Merge current branch into branch below it
+graphene branch fold
 
-Type your search query and use arrow keys to select from matching branches.
+# Continue a fold operation after resolving conflicts
+graphene branch continue
+````
 
-# After resolving rebase conflicts
-graphene continue
+## Stack Commands
 
-# The command will either:
-# - Continue the rebase if all conflicts are resolved
-# - Show remaining conflicts if any exist
+```bash
+# Rename the current stack
+graphene stack rename <name>
+
+# Move up in the current stack
+graphene stack up
+
+# Move down in the current stack
+graphene stack down
+
+# Rebase the current stack onto its base branch
+graphene stack restack
+
+# Delete one or more stacks
+graphene stack delete
+graphene stack rm
 ```
+
+## Technologies
+
+- SQLite for local database
+- Commander.js for CLI interface
+- Inquirer.js for interactive prompts
+- Chalk for colored output
 
 ## Commands
 
