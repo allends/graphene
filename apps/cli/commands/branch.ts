@@ -8,7 +8,7 @@ import {
 import { formatBranchName } from "../utils/format";
 import inquirer from "inquirer";
 import { createInterface } from "node:readline";
-import { search } from "@inquirer/prompts";
+import { input, search } from "@inquirer/prompts";
 
 export function registerBranchCommands(program: Command) {
   program
@@ -293,7 +293,13 @@ export function registerBranchCommands(program: Command) {
 
         console.log(chalk.blue("\nTracking branch in current stack..."));
 
-        await stackService.trackBranch(currentBranch);
+        // Ask the user what they want to name the stack
+        const stackName = await input({
+          message: "What do you want to name the stack?",
+        });
+
+        // Create the stack
+        await stackService.createStackFromHistory(stackName);
 
         console.log(
           chalk.green("\n✓ Successfully tracked branch:"),
@@ -357,6 +363,110 @@ export function registerBranchCommands(program: Command) {
         } else {
           console.error(
             chalk.red("\nFailed to untrack branch:"),
+            error instanceof Error ? error.message : "Unknown error",
+            "\n"
+          );
+        }
+        process.exit(1);
+      }
+    });
+
+  program
+    .command("squash")
+    .description("Squash all commits on the current branch into one")
+    .option("-m, --message <message>", "Commit message for the squashed commit")
+    .action(async (options: { message?: string }) => {
+      try {
+        const gitService = GitService.getInstance();
+        const currentBranch = await gitService.getCurrentBranch();
+
+        console.log(
+          chalk.blue("\nSquashing commits on branch:"),
+          chalk.yellow(currentBranch)
+        );
+
+        await gitService.squashBranch(options.message);
+
+        console.log(
+          chalk.green("\n✓ Successfully squashed all commits on branch:"),
+          chalk.blue(currentBranch),
+          "\n"
+        );
+      } catch (error) {
+        console.error(
+          chalk.red("\nFailed to squash branch:"),
+          error instanceof Error ? error.message : "Unknown error",
+          "\n"
+        );
+        process.exit(1);
+      }
+    });
+
+  program
+    .command("fold")
+    .description("Merge current branch into the branch below it")
+    .action(async () => {
+      try {
+        const gitService = GitService.getInstance();
+        const stackService = StackService.getInstance();
+        const currentBranch = await gitService.getCurrentBranch();
+
+        // Get the downstream branch
+        const downstreamBranch = await stackService.getDownstreamBranch();
+
+        if (!downstreamBranch) {
+          console.log(
+            chalk.yellow("\nCannot fold branch:"),
+            "No branch found below current branch\n"
+          );
+          return;
+        }
+
+        // Confirm the fold
+        const { confirm } = await inquirer.prompt({
+          type: "confirm",
+          name: "confirm",
+          message: chalk.yellow(
+            `\nAre you sure you want to fold ${currentBranch} into ${downstreamBranch}?`
+          ),
+          default: false,
+        });
+
+        if (!confirm) {
+          console.log(chalk.gray("\nFold cancelled\n"));
+          return;
+        }
+
+        console.log(
+          chalk.blue("\nFolding branch"),
+          chalk.yellow(currentBranch),
+          chalk.blue("into"),
+          chalk.yellow(downstreamBranch),
+          chalk.blue("...")
+        );
+
+        await gitService.foldBranch(downstreamBranch);
+
+        // Update the stack in database
+        await stackService.untrackBranch(currentBranch);
+
+        console.log(
+          chalk.green("\n✓ Successfully folded branch:"),
+          chalk.blue(`${currentBranch} → ${downstreamBranch}`),
+          "\n"
+        );
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.includes("not part of a stack")
+        ) {
+          console.error(
+            chalk.yellow("\nCannot fold branch:"),
+            "Current branch is not part of a stack\n"
+          );
+        } else {
+          console.error(
+            chalk.red("\nFailed to fold branch:"),
             error instanceof Error ? error.message : "Unknown error",
             "\n"
           );

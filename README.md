@@ -2,6 +2,8 @@
 
 An offline, open-source version of the Graphite CLI for Git branch management. Graphene helps you manage complex branch workflows and stacks of changes with ease.
 
+This is a work in progress and not all features are available yet. The goal of this project is to provide a simple and easy to use CLI for managing Git branches and pull requests.
+
 ## Overview
 
 Graphene is a command-line tool that helps developers manage their Git branches and pull requests more efficiently. It introduces the concept of "stacks" - groups of related branches that build upon each other, making it easier to work on and manage complex feature development.
@@ -66,8 +68,6 @@ Lists all branches grouped by stack. Only your stacks (local) are shown.
 
 Interactively lists all branches and allows you to checkout a branch. Use jk and arrow keys to navigate.
 
-TODO: press "f" to open up an input to filter through branches.
-
 # Modify the current branch in a stack
 `graphene modify [-a]`
 # or
@@ -89,7 +89,7 @@ Type your search query and use arrow keys to select from matching branches.
 graphene continue
 
 # The command will either:
-# - Continue ahhhhhhh the rebase if all conflicts are resolved
+# - Continue the rebase if all conflicts are resolved
 # - Show remaining conflicts if any exist
 ```
 
