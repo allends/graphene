@@ -1,5 +1,9 @@
-import { spawn } from "node:child_process";
-import { DatabaseService, branches, stacks } from "@allends/graphene-database";
+import {
+  DatabaseService,
+  branches,
+  stacks,
+  repositories,
+} from "@allends/graphene-database";
 import { eq, or } from "drizzle-orm";
 import { GitService } from "./git";
 
@@ -77,6 +81,35 @@ export class BranchService {
     } catch (error) {
       throw new Error(
         `Failed to list branches: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  public async listBaseBranches(): Promise<string[]> {
+    try {
+      const gitService = GitService.getInstance();
+      const repoName = await gitService.getRepositoryName();
+
+      // Get base branches from repository configuration
+      const [repo] = await this.db
+        .getDb()
+        .select()
+        .from(repositories)
+        .where(eq(repositories.name, repoName))
+        .limit(1);
+
+      if (!repo) {
+        // Fall back to default base branch if no configuration exists
+        const defaultBase = await gitService.getBaseBranch();
+        return [defaultBase];
+      }
+
+      return JSON.parse(repo.base_branches);
+    } catch (error) {
+      throw new Error(
+        `Failed to get base branches: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       );

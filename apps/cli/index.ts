@@ -181,30 +181,40 @@ program
       // Get branches grouped by stack
       const groupedBranches = await branchService.listBranches();
 
-      // Get the base branch (main or master)
-      const baseBranch = await gitService.getBaseBranch();
+      // Get all configured base branches
+      const baseBranches = await branchService.listBaseBranches();
 
-      // Format choices for inquirer with better visual alignment
-      const choices = [
-        ...Object.entries(groupedBranches).flatMap(([stackName, branches]) => [
-          ...branches.reverse().map((branch) => ({
-            name: formatBranchName({ branch }),
-            value: branch.name,
-            short: branch.name,
-          })),
-          new inquirer.Separator(chalk.blue.bold(`  ${stackName}`)),
-          new inquirer.Separator(" "),
-        ]),
-        {
-          name: formatBranchName({
+      console.log(chalk.blue("\nBranches by stack:"));
+
+      // Format and display branches with consistent styling
+      Object.entries(groupedBranches).forEach(([stackName, branches]) => {
+        console.log(chalk.blue.bold(`\n  ${stackName}`));
+        console.log(); // Empty line after stack name
+
+        // Show branches in reverse order
+        [...branches].reverse().forEach((branch) => {
+          console.log(
+            formatBranchName({
+              branch,
+              indent: true,
+            })
+          );
+        });
+      });
+
+      // Show all base branches at the bottom
+      console.log(chalk.blue.bold("\n  Base Branches"));
+      console.log(); // Empty line after section
+      baseBranches.forEach((baseBranch) => {
+        console.log(
+          formatBranchName({
             name: baseBranch,
             isCurrent: baseBranch === currentBranch,
-          }),
-          value: baseBranch,
-          short: baseBranch,
-        },
-        new inquirer.Separator(" "),
-      ];
+            indent: true,
+          })
+        );
+      });
+      console.log(); // Empty line at the end
 
       // Set up readline interface to handle 'q' keypress
       const rl = createInterface({
@@ -231,7 +241,28 @@ program
         message: "Select branch to checkout (press 'q' to quit):",
         default: currentBranch,
         pageSize: 20,
-        choices,
+        choices: [
+          ...Object.entries(groupedBranches).flatMap(
+            ([stackName, branches]) => [
+              ...branches.reverse().map((branch) => ({
+                name: formatBranchName({ branch }),
+                value: branch.name,
+                short: branch.name,
+              })),
+              new inquirer.Separator(chalk.blue.bold(`  ${stackName}`)),
+              new inquirer.Separator(" "),
+            ]
+          ),
+          ...baseBranches.map((baseBranch) => ({
+            name: formatBranchName({
+              name: baseBranch,
+              isCurrent: baseBranch === currentBranch,
+            }),
+            value: baseBranch,
+            short: baseBranch,
+          })),
+          new inquirer.Separator(" "),
+        ],
       });
 
       // Clean up readline interface
@@ -680,6 +711,101 @@ program
       } else {
         console.error(
           chalk.red("\nFailed to rename stack:"),
+          error instanceof Error ? error.message : "Unknown error",
+          "\n"
+        );
+      }
+      process.exit(1);
+    }
+  });
+
+program
+  .command("up")
+  .description("Checkout the branch above in the current stack")
+  .action(async () => {
+    try {
+      const stackService = StackService.getInstance();
+      const gitService = GitService.getInstance();
+      const branchService = BranchService.getInstance();
+
+      // Check if current branch is a base branch
+      const baseBranches = await branchService.listBaseBranches();
+      const currentBranch = await gitService.getCurrentBranch();
+
+      if (baseBranches.includes(currentBranch)) {
+        console.log(
+          chalk.yellow("\nCannot move up:"),
+          "Current branch is a base branch\n"
+        );
+        return;
+      }
+
+      const upstreamBranch = await stackService.getUpstreamBranch();
+
+      if (!upstreamBranch) {
+        console.log(
+          chalk.yellow("\nCannot move up:"),
+          "Already at the top of the stack\n"
+        );
+        return;
+      }
+
+      console.log(chalk.blue(`\nMoving up to branch: ${upstreamBranch}`));
+      await gitService.checkoutBranch(upstreamBranch);
+      console.log(chalk.green("\n✓ Successfully checked out branch\n"));
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("not part of a stack")
+      ) {
+        console.error(
+          chalk.yellow("\nCannot move up:"),
+          "Current branch is not part of a stack\n"
+        );
+      } else {
+        console.error(
+          chalk.red("\nFailed to move up:"),
+          error instanceof Error ? error.message : "Unknown error",
+          "\n"
+        );
+      }
+      process.exit(1);
+    }
+  });
+
+program
+  .command("down")
+  .description("Checkout the branch below in the current stack")
+  .action(async () => {
+    try {
+      const stackService = StackService.getInstance();
+      const gitService = GitService.getInstance();
+
+      const downstreamBranch = await stackService.getDownstreamBranch();
+
+      if (!downstreamBranch) {
+        console.log(
+          chalk.yellow("\nCannot move down:"),
+          "Already at the bottom of the stack\n"
+        );
+        return;
+      }
+
+      console.log(chalk.blue(`\nMoving down to branch: ${downstreamBranch}`));
+      await gitService.checkoutBranch(downstreamBranch);
+      console.log(chalk.green("\n✓ Successfully checked out branch\n"));
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("not part of a stack")
+      ) {
+        console.error(
+          chalk.yellow("\nCannot move down:"),
+          "Current branch is not part of a stack\n"
+        );
+      } else {
+        console.error(
+          chalk.red("\nFailed to move down:"),
           error instanceof Error ? error.message : "Unknown error",
           "\n"
         );

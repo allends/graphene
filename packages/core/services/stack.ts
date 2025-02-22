@@ -1,7 +1,7 @@
 import { GitService } from "@allends/graphene-core";
 import { DatabaseService } from "@allends/graphene-database/src";
 import { branches, stacks } from "@allends/graphene-database/src/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 export class StackService {
   private static instance: StackService;
@@ -64,7 +64,7 @@ export class StackService {
       throw new Error(
         `Failed to get current stack: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     }
   }
@@ -90,8 +90,8 @@ export class StackService {
         .where(
           and(
             eq(branches.name, currentBranch),
-            eq(stacks.repository_name, repositoryName),
-          ),
+            eq(stacks.repository_name, repositoryName)
+          )
         )
         .limit(1);
 
@@ -113,15 +113,15 @@ export class StackService {
           .where(
             and(
               eq(branches.stack_id, stackId),
-              sql`position > ${currentBranchData[0].branches.position}`,
-            ),
+              sql`position > ${currentBranchData[0].branches.position}`
+            )
           );
       } else {
         // Create new stack based on current branch
         const [newStack] = await this.db.createStack(
           `stack/${branchName}`,
           repositoryName,
-          currentBranch,
+          currentBranch
         );
         stackId = newStack.id;
         position = 0;
@@ -135,7 +135,7 @@ export class StackService {
         stackId,
         branchName,
         position,
-        parentBranchId,
+        parentBranchId
       );
 
       // Get latest commit info
@@ -156,7 +156,7 @@ export class StackService {
       throw new Error(
         `Failed to create branch in stack: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     }
   }
@@ -199,7 +199,7 @@ export class StackService {
         // Start with rebasing the first branch onto the base branch
         const firstRebase = await this.git.rebaseBranches(
           stackBranches[0].name,
-          baseBranch,
+          baseBranch
         );
 
         if (!firstRebase.success) {
@@ -219,7 +219,7 @@ export class StackService {
 
           const rebaseResult = await this.git.rebaseBranches(
             rebasingBranch,
-            previousBranch,
+            previousBranch
           );
 
           if (!rebaseResult.success) {
@@ -254,7 +254,7 @@ export class StackService {
       throw new Error(
         `Failed to rebase stack: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     }
   }
@@ -281,7 +281,101 @@ export class StackService {
       throw new Error(
         `Failed to rename stack: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
+      );
+    }
+  }
+
+  /**
+   * Gets the branch above the current branch in the stack
+   * @returns The name of the branch above or null if at top
+   */
+  public async getUpstreamBranch(): Promise<string | null> {
+    try {
+      const currentBranch = await this.git.getCurrentBranch();
+      const { stack_id } = await this.getCurrentStack();
+
+      // Get current branch position
+      const [current] = await this.db
+        .getDb()
+        .select()
+        .from(branches)
+        .where(
+          and(eq(branches.stack_id, stack_id), eq(branches.name, currentBranch))
+        )
+        .limit(1);
+
+      if (!current) {
+        throw new Error("Current branch not found in stack");
+      }
+
+      // Get branch with next highest position
+      const [upstream] = await this.db
+        .getDb()
+        .select()
+        .from(branches)
+        .where(
+          and(
+            eq(branches.stack_id, stack_id),
+            sql`position > ${current.position}`
+          )
+        )
+        .orderBy(branches.position)
+        .limit(1);
+
+      return upstream?.name || null;
+    } catch (error) {
+      throw new Error(
+        `Failed to get upstream branch: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Gets the branch below the current branch in the stack
+   * @returns The name of the branch below or null if at bottom
+   */
+  public async getDownstreamBranch(): Promise<string | null> {
+    try {
+      const currentBranch = await this.git.getCurrentBranch();
+      const { stack_id } = await this.getCurrentStack();
+
+      // Get current branch position
+      const [current] = await this.db
+        .getDb()
+        .select()
+        .from(branches)
+        .where(
+          and(eq(branches.stack_id, stack_id), eq(branches.name, currentBranch))
+        )
+        .limit(1);
+
+      if (!current) {
+        throw new Error("Current branch not found in stack");
+      }
+
+      // Get branch with next lowest position
+      const [downstream] = await this.db
+        .getDb()
+        .select()
+        .from(branches)
+        .where(
+          and(
+            eq(branches.stack_id, stack_id),
+            sql`position < ${current.position}`
+          )
+        )
+        .orderBy((branches) => [desc(branches.position)])
+        .limit(1);
+
+      return downstream?.name || null;
+    } catch (error) {
+      throw new Error(
+        `Failed to get downstream branch: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
       );
     }
   }
