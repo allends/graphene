@@ -1,6 +1,10 @@
 import { Command } from "commander";
 import chalk from "chalk";
-import { BranchService, GitService } from "@allends/graphene-core";
+import {
+  BranchService,
+  GitService,
+  StackService,
+} from "@allends/graphene-core";
 import { formatBranchName } from "../utils/format";
 import inquirer from "inquirer";
 import { createInterface } from "node:readline";
@@ -209,6 +213,125 @@ export function registerBranchCommands(program: Command) {
           chalk.red("\nFailed to search branches:"),
           error instanceof Error ? error.message : "Unknown error"
         );
+        process.exit(1);
+      }
+    });
+
+  program
+    .command("modify")
+    .alias("m")
+    .description("Add or amend changes to the current branch")
+    .option(
+      "-a, --amend",
+      "Amend the last commit instead of creating a new one"
+    )
+    .option(
+      "-m, --message <message>",
+      "Commit message (opens editor if not provided)"
+    )
+    .action(async (options: { amend?: boolean; message?: string }) => {
+      try {
+        const gitService = GitService.getInstance();
+
+        if (options.amend) {
+          console.log(chalk.blue("\nAmending last commit..."));
+          await gitService.amendCommit();
+          console.log(chalk.green("\n✓ Successfully amended last commit\n"));
+        } else {
+          console.log(chalk.blue("\nCreating new commit..."));
+          await gitService.commitAll(options.message);
+          console.log(chalk.green("\n✓ Successfully created new commit\n"));
+        }
+      } catch (error) {
+        console.error(
+          chalk.red("\nFailed to modify branch:"),
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        process.exit(1);
+      }
+    });
+
+  program
+    .command("track")
+    .description("Track the current branch in a stack")
+    .action(async () => {
+      try {
+        const stackService = StackService.getInstance();
+        const gitService = GitService.getInstance();
+
+        // Verify branch exists
+        const currentBranch = await gitService.getCurrentBranch();
+
+        console.log(chalk.blue("\nTracking branch in current stack..."));
+
+        await stackService.trackBranch(currentBranch);
+
+        console.log(
+          chalk.green("\n✓ Successfully tracked branch:"),
+          chalk.blue(currentBranch),
+          "\n"
+        );
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.includes("not part of a stack")
+        ) {
+          console.error(
+            chalk.yellow("\nCannot track branch:"),
+            "Current branch is not part of a stack\n"
+          );
+        } else if (
+          error instanceof Error &&
+          error.message.includes("already tracked")
+        ) {
+          console.error(
+            chalk.yellow("\nCannot track branch:"),
+            "Branch is already tracked in a stack\n"
+          );
+        } else {
+          console.error(
+            chalk.red("\nFailed to track branch:"),
+            error instanceof Error ? error.message : "Unknown error",
+            "\n"
+          );
+        }
+        process.exit(1);
+      }
+    });
+
+  program
+    .command("untrack")
+    .description("Remove the current branch from Graphene")
+    .action(async () => {
+      try {
+        const stackService = StackService.getInstance();
+        const gitService = GitService.getInstance();
+
+        // Verify branch exists
+        const currentBranch = await gitService.getCurrentBranch();
+
+        console.log(chalk.blue("\nUntracking branch from stack..."));
+
+        await stackService.untrackBranch(currentBranch);
+
+        console.log(
+          chalk.green("\n✓ Successfully untracked branch:"),
+          chalk.blue(currentBranch),
+          "\n"
+        );
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("not tracked")) {
+          console.error(
+            chalk.yellow("\nCannot untrack branch:"),
+            "Branch is not tracked in any stack\n"
+          );
+        } else {
+          console.error(
+            chalk.red("\nFailed to untrack branch:"),
+            error instanceof Error ? error.message : "Unknown error",
+            "\n"
+          );
+        }
         process.exit(1);
       }
     });
