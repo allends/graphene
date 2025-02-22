@@ -155,16 +155,8 @@ export class GitService {
    */
   public async commitAll(message?: string): Promise<void> {
     try {
-      // Add all changes
-      const addResult = await this.executeGitCommand(["add", "."]);
-      if (addResult.exitCode !== 0) {
-        throw new Error(
-          `Failed to add changes: ${addResult.error || "Unknown error"}`
-        );
-      }
-
       // Create the commit
-      const commitArgs = ["commit"];
+      const commitArgs = ["commit", "-a"];
       if (message) {
         commitArgs.push("-m", message);
       }
