@@ -20,17 +20,15 @@ export function registerBranchCommands(program: Command) {
         // Get branches grouped by stack
         const groupedBranches = await branchService.listBranches();
 
-        // Get the base branch (main or master)
-        const baseBranch = await gitService.getBaseBranch();
+        // Get all configured base branches
+        const baseBranches = await branchService.listBaseBranches();
 
         console.log(chalk.blue("\nBranches by stack:"));
+        console.log(" ");
 
         // Format and display branches with consistent styling
         Object.entries(groupedBranches).forEach(([stackName, branches]) => {
-          console.log(chalk.blue.bold(`\n  ${stackName}`));
-          console.log(); // Empty line after stack name
-
-          // Show branches in reverse order (same as checkout)
+          // Show branches in reverse order
           [...branches].reverse().forEach((branch) => {
             console.log(
               formatBranchName({
@@ -39,18 +37,21 @@ export function registerBranchCommands(program: Command) {
               })
             );
           });
+          console.log(chalk.blue.bold(`  ${stackName}`));
+          console.log(" ");
         });
 
-        // Show base branch at the bottom
-        console.log(chalk.blue.bold("\n  Base Branch"));
+        // Show all base branches at the bottom
         console.log(); // Empty line after section
-        console.log(
-          formatBranchName({
-            name: baseBranch,
-            isCurrent: baseBranch === currentBranch,
-            indent: true,
-          })
-        );
+        baseBranches.forEach((baseBranch) => {
+          console.log(
+            formatBranchName({
+              name: baseBranch,
+              isCurrent: baseBranch === currentBranch,
+              indent: true,
+            })
+          );
+        });
         console.log(); // Empty line at the end
       } catch (error) {
         console.error(
@@ -76,38 +77,6 @@ export function registerBranchCommands(program: Command) {
 
         // Get all configured base branches
         const baseBranches = await branchService.listBaseBranches();
-
-        console.log(chalk.blue("\nBranches by stack:"));
-
-        // Format and display branches with consistent styling
-        Object.entries(groupedBranches).forEach(([stackName, branches]) => {
-          console.log(chalk.blue.bold(`\n  ${stackName}`));
-          console.log(); // Empty line after stack name
-
-          // Show branches in reverse order
-          [...branches].reverse().forEach((branch) => {
-            console.log(
-              formatBranchName({
-                branch,
-                indent: true,
-              })
-            );
-          });
-        });
-
-        // Show all base branches at the bottom
-        console.log(chalk.blue.bold("\n  Base Branches"));
-        console.log(); // Empty line after section
-        baseBranches.forEach((baseBranch) => {
-          console.log(
-            formatBranchName({
-              name: baseBranch,
-              isCurrent: baseBranch === currentBranch,
-              indent: true,
-            })
-          );
-        });
-        console.log(); // Empty line at the end
 
         // Set up readline interface to handle 'q' keypress
         const rl = createInterface({
@@ -198,7 +167,7 @@ export function registerBranchCommands(program: Command) {
 
         const selectedBranch = await search({
           message: "Select a branch to checkout",
-          source: async (input, { signal }) => {
+          source: async (input) => {
             if (!input) {
               return [];
             }
@@ -209,6 +178,11 @@ export function registerBranchCommands(program: Command) {
               name: branch,
               value: branch,
             }));
+          },
+          theme: {
+            style: {
+              highlight: (text: string) => chalk.blue.bold(text),
+            },
           },
         });
 
