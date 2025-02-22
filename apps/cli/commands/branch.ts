@@ -98,11 +98,27 @@ export function registerBranchCommands(program: Command) {
   program
     .command("checkout")
     .alias("co")
-    .description("Interactively checkout a branch")
-    .action(async () => {
+    .description("Interactively checkout a branch or pass through to git")
+    .argument("[args...]", "Arguments to pass to git checkout")
+    .action(async (args: string[]) => {
       try {
-        const branchService = BranchService.getInstance();
         const gitService = GitService.getInstance();
+
+        // If args provided, pass through to git
+        if (args.length > 0) {
+          const { exitCode, error } = await gitService.gitPassthrough([
+            "checkout",
+            ...args,
+          ]);
+
+          if (exitCode !== 0) {
+            throw new Error(error || "Git checkout failed");
+          }
+          return;
+        }
+
+        // Otherwise continue with interactive checkout
+        const branchService = BranchService.getInstance();
         const currentBranch = await gitService.getCurrentBranch();
 
         // Get branches grouped by stack
