@@ -167,9 +167,18 @@ export function registerBranchCommands(program: Command) {
 
         const selectedBranch = await search({
           message: "Select a branch to checkout",
-          source: async (input) => {
+          source: async (input, { signal }) => {
             if (!input) {
               return [];
+            }
+
+            const localBranches = await gitService.searchLocalBranches(input);
+
+            if (localBranches.length > 0) {
+              return localBranches.map((branch) => ({
+                name: branch,
+                value: branch,
+              }));
             }
 
             const remoteBranches = await gitService.searchRemoteBranches(input);

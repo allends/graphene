@@ -304,6 +304,29 @@ export class GitService {
   }
 
   /**
+   * Searches for branches in the local repository that match the given query
+   * @param query The search query string
+   * @returns Array of branch names that match the query
+   */
+  public async searchLocalBranches(query: string): Promise<string[]> {
+    try {
+      // Get all local branches
+      const branches = await this.listLocalBranches();
+
+      // Filter branches by query
+      return branches.filter((branch) =>
+        branch.toLowerCase().includes(query.toLowerCase())
+      );
+    } catch (error) {
+      throw new Error(
+        `Failed to search local branches: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
    * Searches for branches in the remote repository that match the given query
    * @param query The search query string
    * @returns Array of branch names that match the query
@@ -435,6 +458,33 @@ export class GitService {
     } catch (error) {
       throw new Error(
         `Failed to continue rebase: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Lists all local branches
+   */
+  public async listLocalBranches(): Promise<string[]> {
+    try {
+      const { output, exitCode } = await this.executeGitCommand([
+        "branch",
+        "--format=%(refname:short)",
+      ]);
+
+      if (exitCode !== 0) {
+        throw new Error("Failed to list local branches");
+      }
+
+      return output
+        .split("\n")
+        .map((branch) => branch.trim())
+        .filter((branch) => branch && branch !== "HEAD");
+    } catch (error) {
+      throw new Error(
+        `Failed to list local branches: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
