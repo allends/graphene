@@ -2,6 +2,8 @@
 
 An offline, open-source version of the Graphite CLI for Git branch management. Graphene helps you manage complex branch workflows and stacks of changes with ease.
 
+This is a work in progress and not all features are available yet. The goal of this project is to provide a simple and easy to use CLI for managing Git branches and pull requests.
+
 ## Overview
 
 Graphene is a command-line tool that helps developers manage their Git branches and pull requests more efficiently. It introduces the concept of "stacks" - groups of related branches that build upon each other, making it easier to work on and manage complex feature development.
@@ -14,17 +16,17 @@ Graphene is a command-line tool that helps developers manage their Git branches 
 - ✅ Creating branches based off of other branches (`graphene branch <name>`)
 - ✅ Listing branches with stack grouping (`graphene branches`)
 - ✅ Local Git repository initialization (`graphene init`)
-- ✅ GitHub authentication (`graphene auth`)
+- ✅ GitHub authentication (`graphene login`)
 - ✅ Branch modification with auto-add (`graphene modify` or `graphene m`)
 - ✅ Stack creation and management
 - ✅ Branch position tracking in stacks
 - ✅ Commit tracking per branch
-- 🚧 Rebasing branches when there is a change on an upstream branch
-- 🚧 Pushing branches to GitHub
-- 🚧 Creating pull requests
-- ⏳ Pulling branches from GitHub
-- ⏳ Stack visualization
-- ⏳ Interactive rebase management
+- ✅ Rebasing branches when there is a change on an upstream branch
+- ✅ Pushing branches to GitHub
+- ✅ Creating pull requests
+- ✅ Pulling branches from GitHub
+- ✅ Stack visualization
+- ✅ Interactive rebase management
 - ⏳ Conflict resolution assistance
 
 ## Installation
@@ -32,9 +34,6 @@ Graphene is a command-line tool that helps developers manage their Git branches 
 ```bash
 # Install dependencies
 bun install
-
-# Link the CLI globally (optional)
-bun link
 ```
 
 ## Usage
@@ -46,7 +45,7 @@ graphene --help
 # Initialize a new repository
 `graphene init`
 
-Creates a new repository in the current directory, adds all files to the staging area, and commits them.
+Creates a profile for the current directorys repository.
 
 # Create a new branch in a stack
 `graphene create <name>`
@@ -69,8 +68,6 @@ Lists all branches grouped by stack. Only your stacks (local) are shown.
 
 Interactively lists all branches and allows you to checkout a branch. Use jk and arrow keys to navigate.
 
-TODO: press "f" to open up an input to filter through branches.
-
 # Modify the current branch in a stack
 `graphene modify [-a]`
 # or
@@ -92,15 +89,15 @@ Type your search query and use arrow keys to select from matching branches.
 graphene continue
 
 # The command will either:
-# - Continue ahhhhhhh the rebase if all conflicts are resolved
+# - Continue the rebase if all conflicts are resolved
 # - Show remaining conflicts if any exist
 ```
 
 ## Commands
 
 - `info` - Display information about Graphene CLI
-- `init` - Initialize a new Git repository
-- `auth` - Authenticate with GitHub
+- `init` - Initialize the current directory as a Graphene repository
+- `login` - Authenticate with GitHub
 - `create <name>` - Create a new branch in a stack
 - `list` - List all branches grouped by stack
 - `checkout` - Interactively checkout a branch
@@ -117,7 +114,6 @@ This project uses:
 - Bun as the JavaScript runtime
 - SQLite for local database
 - Commander.js for CLI interface
-- Octokit for GitHub API integration
 - Inquirer.js for interactive prompts
 - Chalk for colored output
 

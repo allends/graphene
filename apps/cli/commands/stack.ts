@@ -6,6 +6,7 @@ import {
   BranchService,
   PullRequestService,
 } from "@allends/graphene-core";
+import inquirer from "inquirer";
 
 export function registerStackCommands(program: Command) {
   program
@@ -200,6 +201,139 @@ export function registerStackCommands(program: Command) {
             "\n"
           );
         }
+        process.exit(1);
+      }
+    });
+
+  program
+    .command("restack")
+    .description("Rebase the current stack onto its base branch")
+    .action(async () => {
+      try {
+        const gitService = GitService.getInstance();
+        const stackService = StackService.getInstance();
+
+        // Get current branch
+        const currentBranch = await gitService.getCurrentBranch();
+        console.log(chalk.blue("\nDetecting current stack..."));
+
+        // Find the stack for the current branch
+        const stack = await stackService.getCurrentStack();
+
+        // Get the base branch (main or master)
+        const baseBranch = stack.base_branch;
+
+        console.log(
+          chalk.blue("\nRebasing stack"),
+          chalk.yellow(stack.stack_name),
+          chalk.blue("onto"),
+          chalk.yellow(baseBranch),
+          chalk.blue("...")
+        );
+
+        const result = await stackService.rebaseStack({
+          stackId: stack.stack_id,
+          baseBranch,
+          currentBranch,
+        });
+
+        if (result.success) {
+          console.log(chalk.green("\n✓ Successfully rebased stack\n"));
+        } else {
+          console.error(
+            chalk.red("\nRebase conflicts in branch:"),
+            chalk.yellow(result.conflicts?.branch)
+          );
+          console.error(chalk.red("\nConflicting files:"));
+          result.conflicts?.files.forEach((file) => {
+            console.log(chalk.yellow(`- ${file}`));
+          });
+          console.log(
+            chalk.gray(
+              "\nResolve conflicts and run 'graphene continue' to proceed\n"
+            )
+          );
+          process.exit(1);
+        }
+      } catch (error) {
+        console.error(
+          chalk.red("\nFailed to rebase stack:"),
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        process.exit(1);
+      }
+    });
+
+  program
+    .command("delete")
+    .alias("rm")
+    .description("Delete one or more stacks")
+    .action(async () => {
+      try {
+        const stackService = StackService.getInstance();
+
+        // Get all stacks
+        const stacks = await stackService.listStacks();
+
+        if (stacks.length === 0) {
+          console.log(chalk.yellow("\nNo stacks found in this repository\n"));
+          return;
+        }
+
+        // Let user select stacks to delete
+        const { selectedStacks } = await inquirer.prompt({
+          type: "checkbox",
+          name: "selectedStacks",
+          message:
+            "Select stacks to delete (space to select, enter to confirm):",
+          choices: stacks.map((stack) => ({
+            name: `${stack.name} (${stack.branchCount} branches)`,
+            value: stack.id,
+            short: stack.name,
+          })),
+          validate: (input) => {
+            if (input.length === 0) {
+              return "Please select at least one stack";
+            }
+            return true;
+          },
+        });
+
+        if (selectedStacks.length === 0) {
+          console.log(chalk.gray("\nNo stacks selected\n"));
+          return;
+        }
+
+        // Confirm deletion
+        const { confirm } = await inquirer.prompt({
+          type: "confirm",
+          name: "confirm",
+          message: chalk.yellow(
+            `\nAre you sure you want to delete ${selectedStacks.length} stack(s)? This cannot be undone.`
+          ),
+          default: false,
+        });
+
+        if (!confirm) {
+          console.log(chalk.gray("\nDeletion cancelled\n"));
+          return;
+        }
+
+        console.log(chalk.blue("\nDeleting stacks..."));
+
+        await stackService.deleteStacks(selectedStacks);
+
+        console.log(
+          chalk.green("\n✓ Successfully deleted"),
+          chalk.blue(`${selectedStacks.length} stack(s)`),
+          "\n"
+        );
+      } catch (error) {
+        console.error(
+          chalk.red("\nFailed to delete stacks:"),
+          error instanceof Error ? error.message : "Unknown error",
+          "\n"
+        );
         process.exit(1);
       }
     });

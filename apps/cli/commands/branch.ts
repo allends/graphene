@@ -8,7 +8,7 @@ import {
 import { formatBranchName } from "../utils/format";
 import inquirer from "inquirer";
 import { createInterface } from "node:readline";
-import { search } from "@inquirer/prompts";
+import { input, search } from "@inquirer/prompts";
 
 export function registerBranchCommands(program: Command) {
   program
@@ -293,7 +293,13 @@ export function registerBranchCommands(program: Command) {
 
         console.log(chalk.blue("\nTracking branch in current stack..."));
 
-        await stackService.trackBranch(currentBranch);
+        // Ask the user what they want to name the stack
+        const stackName = await input({
+          message: "What do you want to name the stack?",
+        });
+
+        // Create the stack
+        await stackService.createStackFromHistory(stackName);
 
         console.log(
           chalk.green("\n✓ Successfully tracked branch:"),

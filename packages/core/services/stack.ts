@@ -1,7 +1,7 @@
 import { GitService } from "@allends/graphene-core";
 import { DatabaseService } from "@allends/graphene-database/src";
 import { branches, stacks } from "@allends/graphene-database/src/schema";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 export class StackService {
   private static instance: StackService;
@@ -483,6 +483,144 @@ export class StackService {
     } catch (error) {
       throw new Error(
         `Failed to untrack branch: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Creates a stack from the current branch's commit history
+   * @returns The ID of the created stack
+   */
+  public async createStackFromHistory(stackName: string): Promise<number> {
+    try {
+      const gitService = GitService.getInstance();
+      const currentBranch = await gitService.getCurrentBranch();
+      const repositoryName = await gitService.getRepositoryName();
+      const baseBranches = await this.db.getBaseBranches(repositoryName);
+
+      // Get commit history
+      const history = await gitService.getCommitHistory();
+
+      const branchNames: string[] = [];
+
+      // Find the first base branch commit in history
+      const baseBranch = history.find((commit) => {
+        const branchMatch = commit.match(/\((.*?)\)/);
+
+        if (!branchMatch) {
+          return false;
+        }
+
+        const branchName = branchMatch.at(1);
+
+        if (!branchName) {
+          return false;
+        }
+
+        if (branchName.includes(",")) {
+          throw new Error("Multiple branches found in commit history");
+        }
+
+        if (branchNames.includes(branchName)) {
+          throw new Error("Duplicate branch name found in commit history");
+        }
+
+        if (baseBranches.includes(branchName)) {
+          return true;
+        }
+
+        branchNames.push(branchName);
+
+        return false;
+      });
+
+      if (!baseBranch) {
+        throw new Error("No base branch found in commit history");
+      }
+
+      // Create new stack
+      const [stack] = await this.db.createStack(
+        `stack/${stackName}`,
+        repositoryName,
+        baseBranch
+      );
+
+      branchNames.reverse();
+
+      // Add branches to stack in order
+      for (let i = 0; i < branchNames.length; i++) {
+        await this.db.getDb().insert(branches).values({
+          name: branchNames[i],
+          stack_id: stack.id,
+          status: "active",
+          position: i,
+        });
+      }
+
+      return stack.id;
+    } catch (error) {
+      throw new Error(
+        `Failed to create stack from history: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Deletes multiple stacks and their branches
+   * @param stackIds Array of stack IDs to delete
+   */
+  public async deleteStacks(stackIds: number[]): Promise<void> {
+    try {
+      const db = this.db.getDb();
+
+      // Start a transaction to ensure atomic deletion
+      await db.transaction(async (tx) => {
+        // Delete all branches in these stacks
+        await tx.delete(branches).where(inArray(branches.stack_id, stackIds));
+
+        // Delete the stacks
+        await tx.delete(stacks).where(inArray(stacks.id, stackIds));
+      });
+    } catch (error) {
+      throw new Error(
+        `Failed to delete stacks: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Lists all stacks in the current repository
+   */
+  public async listStacks(): Promise<
+    Array<{
+      id: number;
+      name: string;
+      branchCount: number;
+    }>
+  > {
+    try {
+      const repositoryName = await this.git.getRepositoryName();
+
+      return await this.db
+        .getDb()
+        .select({
+          id: stacks.id,
+          name: stacks.name,
+          branchCount: sql<number>`count(${branches.id})`.as("branch_count"),
+        })
+        .from(stacks)
+        .leftJoin(branches, eq(branches.stack_id, stacks.id))
+        .where(eq(stacks.repository_name, repositoryName))
+        .groupBy(stacks.id, stacks.name);
+    } catch (error) {
+      throw new Error(
+        `Failed to list stacks: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       );

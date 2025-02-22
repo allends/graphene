@@ -515,4 +515,14 @@ export class GitService {
       );
     }
   }
+
+  public async getCommitHistory(): Promise<string[]> {
+    const { output } = await this.executeGitCommand([
+      "log",
+      "--oneline",
+      "--pretty=format:'%h %d'",
+      "--decorate-refs=refs/heads",
+    ]);
+    return output.split("\n").filter(Boolean);
+  }
 }
