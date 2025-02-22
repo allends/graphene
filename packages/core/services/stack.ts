@@ -379,4 +379,113 @@ export class StackService {
       );
     }
   }
+
+  /**
+   * Tracks a branch in the current stack
+   * @param branchName Name of the branch to track
+   */
+  public async trackBranch(branchName: string): Promise<void> {
+    try {
+      const { stack_id } = await this.getCurrentStack();
+      const repositoryName = await this.git.getRepositoryName();
+
+      // Check if branch is already tracked
+      const existingBranch = await this.db
+        .getDb()
+        .select()
+        .from(branches)
+        .innerJoin(stacks, eq(branches.stack_id, stacks.id))
+        .where(
+          and(
+            eq(branches.name, branchName),
+            eq(stacks.repository_name, repositoryName)
+          )
+        )
+        .limit(1);
+
+      if (existingBranch.length > 0) {
+        throw new Error("Branch is already tracked");
+      }
+
+      // Get highest position in current stack
+      const [maxPosition] = await this.db
+        .getDb()
+        .select({
+          position: sql<number>`max(${branches.position})`.as("max_position"),
+        })
+        .from(branches)
+        .where(eq(branches.stack_id, stack_id));
+
+      // Add branch to stack
+      await this.db
+        .getDb()
+        .insert(branches)
+        .values({
+          name: branchName,
+          stack_id,
+          status: "active",
+          position: (maxPosition?.position || 0) + 1,
+        });
+    } catch (error) {
+      throw new Error(
+        `Failed to track branch: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Removes a branch from its stack
+   * @param branchName Name of the branch to untrack
+   */
+  public async untrackBranch(branchName: string): Promise<void> {
+    try {
+      const repositoryName = await this.git.getRepositoryName();
+
+      // Get branch info
+      const [branchInfo] = await this.db
+        .getDb()
+        .select()
+        .from(branches)
+        .innerJoin(stacks, eq(branches.stack_id, stacks.id))
+        .where(
+          and(
+            eq(branches.name, branchName),
+            eq(stacks.repository_name, repositoryName)
+          )
+        )
+        .limit(1);
+
+      if (!branchInfo || !branchInfo.branches.stack_id) {
+        throw new Error("Branch is not tracked");
+      }
+
+      // Remove branch from stack
+      await this.db
+        .getDb()
+        .delete(branches)
+        .where(eq(branches.name, branchName));
+
+      // Update positions of remaining branches
+      await this.db
+        .getDb()
+        .update(branches)
+        .set({
+          position: sql`${branches.position} - 1`,
+        })
+        .where(
+          and(
+            eq(branches.stack_id, branchInfo.branches.stack_id),
+            sql`position > ${branchInfo.branches.position}`
+          )
+        );
+    } catch (error) {
+      throw new Error(
+        `Failed to untrack branch: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
 }

@@ -9,11 +9,14 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "release": "bunx @changesets/cli && bunx @changesets/cli version",
     "publish": "bun run scripts/publish.ts",
-    "dev": "cd apps/cli && bun run dev",
-    "bump": "bun run scripts/bump-version.ts"
+    "dev": "cd apps/cli && bun run dev"
   },
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@types/bun": "latest"
