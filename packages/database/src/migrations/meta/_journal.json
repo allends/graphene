@@ -22,6 +22,13 @@
       "when": 1739770748644,
       "tag": "0002_lovely_magus",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1740191405372,
+      "tag": "0003_shallow_eternals",
+      "breakpoints": true
     }
   ]
 }

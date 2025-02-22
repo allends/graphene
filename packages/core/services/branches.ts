@@ -70,7 +70,7 @@ export class BranchService {
       });
 
       if (grouped["No Stack"].length === 0) {
-        grouped["No Stack"] = undefined;
+        delete grouped["No Stack"];
       }
 
       return grouped;
@@ -78,7 +78,7 @@ export class BranchService {
       throw new Error(
         `Failed to list branches: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     }
   }

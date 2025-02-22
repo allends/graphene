@@ -440,4 +440,37 @@ export class GitService {
       );
     }
   }
+
+  /**
+   * Lists all remote branches
+   */
+  public async listRemoteBranches(): Promise<string[]> {
+    try {
+      // First fetch to ensure we have latest
+      await this.executeGitCommand(["fetch"]);
+
+      const { output, exitCode } = await this.executeGitCommand([
+        "branch",
+        "-r",
+        "--format=%(refname:short)",
+      ]);
+
+      if (exitCode !== 0) {
+        throw new Error("Failed to list remote branches");
+      }
+
+      return output
+        .split("\n")
+        .map((branch) => branch.trim())
+        .filter((branch) => branch && branch.startsWith("origin/"))
+        .map((branch) => branch.replace("origin/", ""))
+        .filter((branch) => branch !== "HEAD");
+    } catch (error) {
+      throw new Error(
+        `Failed to list remote branches: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
 }

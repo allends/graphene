@@ -1,6 +1,14 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { foreignKey } from "drizzle-orm/sqlite-core";
 
+export const repositories = sqliteTable("repositories", {
+  name: text("name").primaryKey().notNull(),
+  base_branches: text("base_branches").notNull(),
+  created_at: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$default(() => new Date()),
+});
+
 export const stacks = sqliteTable("stacks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   repository_name: text("repository_name").notNull(),
@@ -41,7 +49,7 @@ export const branches = sqliteTable(
       columns: [table.parent_branch_id],
       foreignColumns: [table.id],
     }),
-  }),
+  })
 );
 
 export const commits = sqliteTable(
@@ -61,5 +69,5 @@ export const commits = sqliteTable(
       columns: [table.branch_id],
       foreignColumns: [branches.id],
     }),
-  }),
+  })
 );
