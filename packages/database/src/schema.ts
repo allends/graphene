@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { foreignKey } from "drizzle-orm/sqlite-core";
 
 export const stacks = sqliteTable("stacks", {
@@ -41,7 +41,7 @@ export const branches = sqliteTable(
       columns: [table.parent_branch_id],
       foreignColumns: [table.id],
     }),
-  })
+  }),
 );
 
 export const commits = sqliteTable(
@@ -61,5 +61,5 @@ export const commits = sqliteTable(
       columns: [table.branch_id],
       foreignColumns: [branches.id],
     }),
-  })
+  }),
 );

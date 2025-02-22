@@ -1,7 +1,7 @@
-import { join } from "path";
-import { homedir } from "os";
-import { mkdir } from "fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type { Config } from "drizzle-kit";
+import { mkdir } from "node:fs/promises";
 
 const dbPath = join(homedir(), ".graphene", "graphene.db");
 

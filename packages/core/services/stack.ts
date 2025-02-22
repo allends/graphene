@@ -1,7 +1,7 @@
 import { GitService } from "@allends/graphene-core";
 import { DatabaseService } from "@allends/graphene-database/src";
-import { eq, sql, and } from "drizzle-orm";
 import { branches, stacks } from "@allends/graphene-database/src/schema";
+import { and, eq, sql } from "drizzle-orm";
 
 export class StackService {
   private static instance: StackService;
@@ -64,7 +64,7 @@ export class StackService {
       throw new Error(
         `Failed to get current stack: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     }
   }
@@ -90,8 +90,8 @@ export class StackService {
         .where(
           and(
             eq(branches.name, currentBranch),
-            eq(stacks.repository_name, repositoryName)
-          )
+            eq(stacks.repository_name, repositoryName),
+          ),
         )
         .limit(1);
 
@@ -101,8 +101,8 @@ export class StackService {
 
       if (currentBranchData.length > 0) {
         // Branch is in a stack, use that stack
-        stackId = currentBranchData[0].stacks.id!;
-        position = currentBranchData[0].branches.position! + 1;
+        stackId = currentBranchData[0].stacks.id;
+        position = currentBranchData[0].branches.position + 1;
         parentBranchId = currentBranchData[0].branches.id;
 
         // Increment position of all branches after this one
@@ -113,15 +113,15 @@ export class StackService {
           .where(
             and(
               eq(branches.stack_id, stackId),
-              sql`position > ${currentBranchData[0].branches.position}`
-            )
+              sql`position > ${currentBranchData[0].branches.position}`,
+            ),
           );
       } else {
         // Create new stack based on current branch
         const [newStack] = await this.db.createStack(
           `stack/${branchName}`,
           repositoryName,
-          currentBranch
+          currentBranch,
         );
         stackId = newStack.id;
         position = 0;
@@ -135,7 +135,7 @@ export class StackService {
         stackId,
         branchName,
         position,
-        parentBranchId
+        parentBranchId,
       );
 
       // Get latest commit info
@@ -156,7 +156,7 @@ export class StackService {
       throw new Error(
         `Failed to create branch in stack: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     }
   }
@@ -199,7 +199,7 @@ export class StackService {
         // Start with rebasing the first branch onto the base branch
         const firstRebase = await this.git.rebaseBranches(
           stackBranches[0].name,
-          baseBranch
+          baseBranch,
         );
 
         if (!firstRebase.success) {
@@ -219,7 +219,7 @@ export class StackService {
 
           const rebaseResult = await this.git.rebaseBranches(
             rebasingBranch,
-            previousBranch
+            previousBranch,
           );
 
           if (!rebaseResult.success) {
@@ -254,7 +254,34 @@ export class StackService {
       throw new Error(
         `Failed to rebase stack: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
+      );
+    }
+  }
+
+  /**
+   * Renames the current stack
+   * @param newName The new name for the stack
+   */
+  public async renameCurrentStack(newName: string): Promise<void> {
+    try {
+      // Get current stack
+      const { stack_id } = await this.getCurrentStack();
+
+      // Update stack name in database
+      await this.db
+        .getDb()
+        .update(stacks)
+        .set({
+          name: newName,
+          updated_at: new Date(),
+        })
+        .where(eq(stacks.id, stack_id));
+    } catch (error) {
+      throw new Error(
+        `Failed to rename stack: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
       );
     }
   }

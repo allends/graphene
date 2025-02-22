@@ -8,23 +8,14 @@
     "graphene": "./apps/cli/index.ts"
   },
   "scripts": {
-    "build": "bun run build:core && bun run build:cli && bun run build:database",
-    "build:core": "cd packages/core && bun run build",
-    "build:cli": "cd apps/cli && bun run build",
-    "build:database": "cd packages/database && bun run build",
+    "build": "turbo run build",
     "publish": "bun run scripts/publish.ts",
     "dev": "cd apps/cli && bun run dev",
-    "link": "cd apps/cli && bun link",
-    "link-binary": "chmod +x graphene && sudo ln -sf \"$(pwd)/graphene\" /usr/local/bin/graphene",
-    "install-cli": "bun run build && bun run link-binary",
-    "uninstall-cli": "sudo rm -f /usr/local/bin/graphene && rm -f graphene",
     "bump": "bun run scripts/bump-version.ts"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/*", "packages/*"],
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@types/bun": "latest"
   },
   "peerDependencies": {

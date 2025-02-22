@@ -7,12 +7,7 @@
     "access": "public"
   },
   "main": "./dist/index.js",
-  "files": [
-    "dist",
-    "drizzle",
-    "migrations",
-    "src"
-  ],
+  "files": ["dist", "drizzle", "migrations", "src"],
   "scripts": {
     "generate": "drizzle-kit generate",
     "migrate": "bun drizzle-kit migrate",

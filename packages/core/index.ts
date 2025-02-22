@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
 
 import { DatabaseService } from "../database/src";
-import { BranchService, type Branch } from "./services/branches";
+import { type Branch, BranchService } from "./services/branches";
 import { GitService } from "./services/git";
 import { PullRequestService } from "./services/pullRequest";
 
-import { StackService } from "./services/stack";
 import { AuthenticationService } from "./services/authentication";
+import { StackService } from "./services/stack";
 export {
   AuthenticationService,
   BranchService,

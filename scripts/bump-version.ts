@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
-import { join } from "path";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 const PACKAGES = ["core", "database"];
 const APPS = ["cli"];
@@ -22,10 +22,10 @@ function updatePackageVersion(packagePath: string): void {
   packageJson.version = newVersion;
 
   // Write updated package.json
-  writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + "\n");
+  writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 
   console.log(
-    `Updated ${packagePath} version: ${currentVersion} -> ${newVersion}`
+    `Updated ${packagePath} version: ${currentVersion} -> ${newVersion}`,
   );
 }
 
@@ -45,8 +45,8 @@ try {
   } else {
     console.error(
       `Invalid package name. Must be one of: ${[...PACKAGES, ...APPS].join(
-        ", "
-      )}`
+        ", ",
+      )}`,
     );
     process.exit(1);
   }

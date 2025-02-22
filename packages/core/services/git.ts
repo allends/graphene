@@ -1,4 +1,4 @@
-import { spawn } from "child_process";
+import { spawn } from "node:child_process";
 
 export class GitService {
   private static instance: GitService;
@@ -319,7 +319,7 @@ export class GitService {
         "-r", // Show remote branches
         "--format=%(refname:short)", // Only show branch names
         "--sort=-committerdate", // Sort by most recent commit
-        `--list`, // List mode
+        "--list", // List mode
         `*${query}*`, // Match pattern
       ]);
 
@@ -333,7 +333,7 @@ export class GitService {
           .split("\n")
           .map((branch) => branch.trim())
           // Remove 'origin/' prefix and empty lines
-          .filter((branch) => branch && branch.startsWith("origin/"))
+          .filter((branch) => branch?.startsWith("origin/"))
           .map((branch) => branch.replace("origin/", ""))
           // Remove HEAD reference if present
           .filter((branch) => branch !== "HEAD")

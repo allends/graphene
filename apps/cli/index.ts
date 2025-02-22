@@ -14,6 +14,7 @@ import inquirer from "inquirer";
 import { search } from "@inquirer/prompts";
 import open from "open";
 import { formatBranchName } from "./utils/format";
+import { createInterface } from "node:readline";
 
 const program = new Command();
 
@@ -89,21 +90,43 @@ program
   .action(async () => {
     try {
       const branchService = BranchService.getInstance();
+      const gitService = GitService.getInstance();
+      const currentBranch = await gitService.getCurrentBranch();
+
+      // Get branches grouped by stack
       const groupedBranches = await branchService.listBranches();
+
+      // Get the base branch (main or master)
+      const baseBranch = await gitService.getBaseBranch();
 
       console.log(chalk.blue("\nBranches by stack:"));
 
+      // Format and display branches with consistent styling
       Object.entries(groupedBranches).forEach(([stackName, branches]) => {
-        console.log(chalk.yellow(`\n${stackName}:`));
-        branches.forEach((branch) => {
-          const prefix = branch.current ? "* " : "  ";
+        console.log(chalk.blue.bold(`\n  ${stackName}`));
+        console.log(); // Empty line after stack name
+
+        // Show branches in reverse order (same as checkout)
+        [...branches].reverse().forEach((branch) => {
           console.log(
-            chalk.blue(prefix),
-            branch.current ? chalk.green(branch.name) : chalk.blue(branch.name)
+            formatBranchName({
+              branch,
+              indent: true,
+            })
           );
         });
       });
 
+      // Show base branch at the bottom
+      console.log(chalk.blue.bold("\n  Base Branch"));
+      console.log(); // Empty line after section
+      console.log(
+        formatBranchName({
+          name: baseBranch,
+          isCurrent: baseBranch === currentBranch,
+          indent: true,
+        })
+      );
       console.log(); // Empty line at the end
     } catch (error) {
       console.error(
@@ -182,7 +205,7 @@ program
       ];
 
       // Set up readline interface to handle 'q' keypress
-      const rl = require("readline").createInterface({
+      const rl = createInterface({
         input: process.stdin,
         output: process.stdout,
       });
@@ -326,7 +349,7 @@ program
       const baseBranch = stack.base_branch;
 
       console.log(
-        chalk.blue(`\nRebasing stack`),
+        chalk.blue("\nRebasing stack"),
         chalk.yellow(stack.stack_name),
         chalk.blue("onto"),
         chalk.yellow(baseBranch),
@@ -343,7 +366,7 @@ program
         console.log(chalk.green("\n✓ Successfully rebased stack\n"));
       } else {
         console.error(
-          chalk.red(`\nRebase conflicts in branch:`),
+          chalk.red("\nRebase conflicts in branch:"),
           chalk.yellow(result.conflicts?.branch)
         );
         console.error(chalk.red("\nConflicting files:"));
@@ -454,7 +477,6 @@ program
   .action(async () => {
     try {
       const gitService = GitService.getInstance();
-      let searchResults: string[] = [];
 
       const selectedBranch = await search({
         message: "Select a branch to checkout",
@@ -528,6 +550,50 @@ program
         chalk.red("\nFailed to continue rebase:"),
         error instanceof Error ? error.message : "Unknown error"
       );
+      process.exit(1);
+    }
+  });
+
+program
+  .command("rename")
+  .description("Rename the current stack")
+  .argument("<name>", "New name for the stack")
+  .action(async (newName: string) => {
+    try {
+      const stackService = StackService.getInstance();
+
+      // Get current stack info for feedback
+      const { stack_name: oldName } = await stackService.getCurrentStack();
+
+      console.log(
+        chalk.blue("\nRenaming stack:"),
+        chalk.yellow(oldName),
+        chalk.blue("→"),
+        chalk.yellow(newName)
+      );
+
+      await stackService.renameCurrentStack(newName);
+
+      console.log(
+        chalk.green("\n✓ Successfully renamed stack:"),
+        chalk.blue(`${oldName} → ${newName}\n`)
+      );
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("not part of a stack")
+      ) {
+        console.error(
+          chalk.yellow("\nCannot rename stack:"),
+          "Current branch is not part of a stack\n"
+        );
+      } else {
+        console.error(
+          chalk.red("\nFailed to rename stack:"),
+          error instanceof Error ? error.message : "Unknown error",
+          "\n"
+        );
+      }
       process.exit(1);
     }
   });

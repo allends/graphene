@@ -108,6 +108,7 @@ graphene continue
 - `modify` - Add or amend changes to the current branch
 - `git [args...]` - Execute Git commands directly
 - `continue` - Continue a rebase after resolving conflicts
+- `rename <name>` - Rename the current stack
 
 ## Development
 

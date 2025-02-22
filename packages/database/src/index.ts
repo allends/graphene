@@ -1,11 +1,11 @@
 import { Database } from "bun:sqlite";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { join } from "path";
-import { homedir } from "os";
-import { mkdir } from "fs/promises";
+import { mkdir } from "node:fs/promises";
 import * as schema from "./schema";
-import { sql } from "drizzle-orm";
 
 export class DatabaseService {
   private static instance: DatabaseService;
@@ -42,7 +42,7 @@ export class DatabaseService {
     name: string,
     repositoryName: string,
     baseBranch: string,
-    description?: string
+    description?: string,
   ) {
     return this.db
       .insert(schema.stacks)
@@ -63,7 +63,7 @@ export class DatabaseService {
     stackId: number,
     branchName: string,
     position: number,
-    parentBranchId?: number
+    parentBranchId?: number,
   ) {
     return this.db
       .insert(schema.branches)
@@ -89,7 +89,7 @@ export class DatabaseService {
     branchId: number,
     sha: string,
     message: string,
-    author: string
+    author: string,
   ) {
     return this.db
       .insert(schema.commits)
@@ -104,7 +104,7 @@ export class DatabaseService {
 
   public async updateBranchStatus(
     branchId: number,
-    status: "active" | "merged" | "abandoned"
+    status: "active" | "merged" | "abandoned",
   ) {
     return this.db
       .update(schema.branches)

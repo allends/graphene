@@ -1,8 +1,8 @@
-import { GitService } from "./git";
+import { spawn } from "node:child_process";
 import { DatabaseService } from "@allends/graphene-database/src";
-import { and, eq } from "drizzle-orm";
 import { branches } from "@allends/graphene-database/src/schema";
-import { spawn } from "child_process";
+import { and, eq } from "drizzle-orm";
+import { GitService } from "./git";
 
 export class PullRequestService {
   private static instance: PullRequestService;
@@ -90,8 +90,8 @@ export class PullRequestService {
         .where(
           and(
             eq(branches.stack_id, branchData.stack_id),
-            eq(branches.position, branchData.position - 1)
-          )
+            eq(branches.position, branchData.position - 1),
+          ),
         )
         .limit(1);
 
@@ -109,7 +109,7 @@ export class PullRequestService {
       const parentPR = await this.checkPRExists(parentBranch.name);
       if (!parentPR) {
         throw new Error(
-          "Parent branch must have an open PR before creating this PR"
+          "Parent branch must have an open PR before creating this PR",
         );
       }
 
@@ -123,7 +123,7 @@ export class PullRequestService {
       throw new Error(
         `Failed to create pull request: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     }
   }

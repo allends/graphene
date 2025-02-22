@@ -1,6 +1,6 @@
-import { spawn } from "child_process";
-import { eq, or } from "drizzle-orm";
+import { spawn } from "node:child_process";
 import { DatabaseService, branches, stacks } from "@allends/graphene-database";
+import { eq, or } from "drizzle-orm";
 import { GitService } from "./git";
 
 export interface Branch {
@@ -70,7 +70,7 @@ export class BranchService {
       });
 
       if (grouped["No Stack"].length === 0) {
-        delete grouped["No Stack"];
+        grouped["No Stack"] = undefined;
       }
 
       return grouped;
@@ -78,7 +78,7 @@ export class BranchService {
       throw new Error(
         `Failed to list branches: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
     }
   }

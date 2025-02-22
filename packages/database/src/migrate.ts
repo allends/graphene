@@ -1,9 +1,9 @@
+import { Database } from "bun:sqlite";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { Database } from "bun:sqlite";
-import { join } from "path";
-import { homedir } from "os";
-import { mkdir } from "fs/promises";
+import { mkdir } from "node:fs/promises";
 
 async function main() {
   const dbPath = join(homedir(), ".graphene", "graphene.db");

@@ -13,13 +13,10 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@allends/graphene-database": "workspace:*",
-    "octokit": "^4.1.1"
+    "@allends/graphene-database": "workspace:*"
   },
   "scripts": {
     "build": "bun build ./index.ts --outdir ./dist --target bun"
   },
-  "files": [
-    "dist"
-  ]
+  "files": ["dist"]
 }

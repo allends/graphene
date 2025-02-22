@@ -4,20 +4,26 @@ import chalk from "chalk";
 type FormatBranchNameParams =
   | {
       branch: StackedBranch;
+      indent?: boolean;
     }
   | {
       name: string;
       isCurrent: boolean;
+      indent?: boolean;
     };
 
 export const formatBranchName = (params: FormatBranchNameParams) => {
   if ("branch" in params) {
-    const { branch } = params;
+    const { branch, indent = false } = params;
 
-    return `  ${branch.current ? "●" : "○"} ${branch.name.padEnd(30)}`;
+    return `${indent ? "  " : ""}${
+      branch.current ? "●" : "○"
+    } ${branch.name.padEnd(30)}`;
   }
 
-  const { name, isCurrent } = params;
+  const { name, isCurrent, indent = false } = params;
 
-  return `  ${isCurrent ? "●" : "○"} ${name} ${chalk.blue("(base)")}`;
+  return `${indent ? "  " : ""}${isCurrent ? "●" : "○"} ${name} ${chalk.blue(
+    "(base)",
+  )}`;
 };

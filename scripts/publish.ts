@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { join } from "path";
-import { execSync } from "child_process";
-import { readFileSync, writeFileSync } from "fs";
+import { execSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import chalk from "chalk";
 
 const PACKAGES = ["core", "database"];
@@ -25,10 +25,10 @@ function updatePackageVersion(packagePath: string): string {
   packageJson.version = newVersion;
 
   // Write updated package.json
-  writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + "\n");
+  writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 
   console.log(
-    `Updated ${packagePath} version: ${currentVersion} -> ${newVersion}`
+    `Updated ${packagePath} version: ${currentVersion} -> ${newVersion}`,
   );
 
   return newVersion;
@@ -66,7 +66,7 @@ async function main() {
   } catch (error) {
     console.error(
       chalk.red("\nFailed to publish packages:"),
-      error instanceof Error ? error.message : "Unknown error"
+      error instanceof Error ? error.message : "Unknown error",
     );
     process.exit(1);
   }
