@@ -67,6 +67,35 @@ export function registerBranchCommands(program: Command) {
     });
 
   program
+    .command("create")
+    .alias("c")
+    .description("Create a new branch in a stack")
+    .argument("<name>", "Name of the branch to create")
+    .action(async (branchName: string) => {
+      try {
+        const stackService = StackService.getInstance();
+
+        console.log(chalk.blue("\nCreating branch in stack..."));
+
+        await stackService.createBranchInStack({ branchName });
+
+        console.log(
+          chalk.green("\n✓ Successfully created branch:"),
+          chalk.blue(branchName)
+        );
+        console.log(
+          chalk.gray("Branch is now part of the stack and ready for commits\n")
+        );
+      } catch (error) {
+        console.error(
+          chalk.red("\nFailed to create branch:"),
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        process.exit(1);
+      }
+    });
+
+  program
     .command("checkout")
     .alias("co")
     .description("Interactively checkout a branch")
