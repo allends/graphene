@@ -525,4 +525,68 @@ export class GitService {
     ]);
     return output.split("\n").filter(Boolean);
   }
+
+  /**
+   * Squashes all commits on the current branch into a single commit
+   * @param message Optional commit message for the squashed commit
+   */
+  public async squashBranch(message?: string): Promise<void> {
+    try {
+      const currentBranch = await this.getCurrentBranch();
+      const baseBranch = await this.getBaseBranch();
+
+      // Get merge base commit with base branch
+      const { output: mergeBase } = await this.executeGitCommand([
+        "merge-base",
+        baseBranch,
+        currentBranch,
+      ]);
+
+      // Soft reset to merge base to unstage everything
+      await this.executeGitCommand(["reset", "--soft", mergeBase.trim()]);
+
+      // Create new commit with all changes
+      const commitMessage = message || "squash: combine all commits";
+      await this.executeGitCommand(["commit", "-m", commitMessage]);
+    } catch (error) {
+      throw new Error(
+        `Failed to squash branch: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Merges the current branch into the branch below it
+   * @param downstreamBranch Name of the branch below current branch
+   */
+  public async foldBranch(downstreamBranch: string): Promise<void> {
+    try {
+      const currentBranch = await this.getCurrentBranch();
+
+      // First checkout the downstream branch
+      await this.checkoutBranch(downstreamBranch);
+
+      // Then merge the current branch into it
+      const { exitCode, error } = await this.executeGitCommand([
+        "merge",
+        "--no-ff", // Preserve commit history
+        currentBranch,
+      ]);
+
+      if (exitCode !== 0) {
+        throw new Error(`Merge failed: ${error || "Unknown error"}`);
+      }
+
+      // Delete the old branch since it's now merged
+      await this.executeGitCommand(["branch", "-d", currentBranch]);
+    } catch (error) {
+      throw new Error(
+        `Failed to fold branch: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
 }
