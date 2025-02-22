@@ -66,16 +66,21 @@ export const registerRestackCommands = (program: Command) => {
     .command("continue")
     .description("Continue a rebase after resolving conflicts")
     .action(async () => {
+      let _operation = undefined;
       try {
         const gitService = GitService.getInstance();
 
         const isRebaseInProgress = await gitService.isRebaseInProgress();
+        const isMergeInProgress = await gitService.isMergeInProgress();
 
         // Check if we're in a rebase using the new method
-        if (!isRebaseInProgress) {
-          console.log(chalk.yellow("\nNo rebase in progress.\n"));
+        if (!isRebaseInProgress && !isMergeInProgress) {
+          console.log(chalk.yellow("\nNo rebase or merge in progress.\n"));
           return;
         }
+
+        const operation = isRebaseInProgress ? "rebase" : "merge";
+        _operation = operation;
 
         console.log(chalk.blue("\nContinuing rebase..."));
 
@@ -83,10 +88,10 @@ export const registerRestackCommands = (program: Command) => {
         const result = await gitService.continueRebase();
 
         if (result.success) {
-          console.log(chalk.green("\n✓ Successfully continued rebase\n"));
+          console.log(chalk.green(`\n✓ Successfully continued ${operation}\n`));
         } else {
           // Show remaining conflicts
-          console.error(chalk.red("\nRebase conflicts still exist in:"));
+          console.error(chalk.red(`\n${operation} conflicts still exist in:`));
           result.conflicts?.forEach((file) => {
             console.log(chalk.yellow(`- ${file}`));
           });
@@ -99,7 +104,7 @@ export const registerRestackCommands = (program: Command) => {
         }
       } catch (error) {
         console.error(
-          chalk.red("\nFailed to continue rebase:"),
+          chalk.red(`\nFailed to continue ${_operation || "operation"}:`),
           error instanceof Error ? error.message : "Unknown error"
         );
         process.exit(1);

@@ -419,6 +419,22 @@ export class GitService {
   }
 
   /**
+   * Checks if a fold operation is currently in progress
+   * @returns true if a fold is in progress
+   */
+  public async isMergeInProgress(): Promise<boolean> {
+    try {
+      const { output } = await this.executeGitCommand(["status"]);
+      return output.includes("merge in progress");
+    } catch (error) {
+      throw new Error(
+        `Failed to check fold status: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+  /**
    * Continues a rebase in progress
    * @returns Object containing success status and any conflicts
    */
@@ -560,8 +576,12 @@ export class GitService {
   /**
    * Merges the current branch into the branch below it
    * @param downstreamBranch Name of the branch below current branch
+   * @returns Object indicating success or conflict details
    */
-  public async foldBranch(downstreamBranch: string): Promise<void> {
+  public async foldBranch(downstreamBranch: string): Promise<{
+    success: boolean;
+    conflicts?: { branch: string; files: string[] };
+  }> {
     try {
       const currentBranch = await this.getCurrentBranch();
 
@@ -569,21 +589,101 @@ export class GitService {
       await this.checkoutBranch(downstreamBranch);
 
       // Then merge the current branch into it
-      const { exitCode, error } = await this.executeGitCommand([
+      const { exitCode, error, output } = await this.executeGitCommand([
         "merge",
         "--no-ff", // Preserve commit history
         currentBranch,
       ]);
 
       if (exitCode !== 0) {
-        throw new Error(`Merge failed: ${error || "Unknown error"}`);
+        // Get list of conflicting files
+        const { output: conflictOutput } = await this.executeGitCommand([
+          "diff",
+          "--name-only",
+          "--diff-filter=U",
+        ]);
+
+        const conflicts = {
+          branch: currentBranch,
+          files: conflictOutput.split("\n").filter(Boolean),
+        };
+
+        return { success: false, conflicts };
       }
 
       // Delete the old branch since it's now merged
       await this.executeGitCommand(["branch", "-d", currentBranch]);
+      return { success: true };
     } catch (error) {
       throw new Error(
         `Failed to fold branch: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Continues a fold operation after resolving conflicts
+   * @param originalBranch The branch that was being folded
+   */
+  public async continueFold(originalBranch: string): Promise<void> {
+    try {
+      // Check if there are still unresolved conflicts
+      const { output: statusOutput } = await this.executeGitCommand([
+        "status",
+        "--porcelain",
+      ]);
+
+      if (statusOutput.includes("U")) {
+        throw new Error("There are still unresolved conflicts");
+      }
+
+      // Complete the merge
+      await this.executeGitCommand(["commit", "--no-edit"]);
+
+      // Delete the original branch
+      await this.executeGitCommand(["branch", "-d", originalBranch]);
+    } catch (error) {
+      throw new Error(
+        `Failed to continue fold: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  /**
+   * Get fold branch information
+   */
+  public async getFoldBranchInfo(): Promise<{
+    currentBranch: string;
+    downstreamBranch: string;
+  }> {
+    try {
+      // Get the branch being folded from the merge message
+      const { output: mergeHead } = await this.executeGitCommand([
+        "rev-parse",
+        "MERGE_HEAD",
+      ]);
+
+      if (!mergeHead) {
+        throw new Error("No fold operation in progress");
+      }
+
+      const { output: branchName } = await this.executeGitCommand([
+        "name-rev",
+        "--name-only",
+        mergeHead.trim(),
+      ]);
+
+      return {
+        currentBranch: branchName.trim(),
+        downstreamBranch: branchName.trim().split("/")[1],
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to get fold branch info: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       );

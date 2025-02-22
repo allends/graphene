@@ -403,6 +403,43 @@ export function registerBranchCommands(program: Command) {
     });
 
   program
+    .command("continue")
+    .description("Continue a fold operation after resolving conflicts")
+    .action(async () => {
+      try {
+        const gitService = GitService.getInstance();
+        const stackService = StackService.getInstance();
+
+        const { currentBranch, downstreamBranch } =
+          await gitService.getFoldBranchInfo();
+
+        console.log(chalk.blue("\nContinuing fold operation..."));
+
+        await gitService.continueFold(currentBranch);
+        await stackService.untrackBranch(currentBranch);
+
+        console.log(chalk.green("\n✓ Successfully completed fold operation\n"));
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.includes("unresolved conflicts")
+        ) {
+          console.error(
+            chalk.yellow("\nCannot continue:"),
+            "There are still unresolved conflicts\n"
+          );
+        } else {
+          console.error(
+            chalk.red("\nFailed to continue fold:"),
+            error instanceof Error ? error.message : "Unknown error",
+            "\n"
+          );
+        }
+        process.exit(1);
+      }
+    });
+
+  program
     .command("fold")
     .description("Merge current branch into the branch below it")
     .action(async () => {
@@ -445,16 +482,31 @@ export function registerBranchCommands(program: Command) {
           chalk.blue("...")
         );
 
-        await gitService.foldBranch(downstreamBranch);
+        const result = await gitService.foldBranch(downstreamBranch);
 
-        // Update the stack in database
-        await stackService.untrackBranch(currentBranch);
-
-        console.log(
-          chalk.green("\n✓ Successfully folded branch:"),
-          chalk.blue(`${currentBranch} → ${downstreamBranch}`),
-          "\n"
-        );
+        if (result.success) {
+          await stackService.untrackBranch(currentBranch);
+          console.log(
+            chalk.green("\n✓ Successfully folded branch:"),
+            chalk.blue(`${currentBranch} → ${downstreamBranch}`),
+            "\n"
+          );
+        } else {
+          console.error(
+            chalk.red("\nFold conflicts in branch:"),
+            chalk.yellow(result.conflicts?.branch)
+          );
+          console.error(chalk.red("\nConflicting files:"));
+          result.conflicts?.files.forEach((file) => {
+            console.log(chalk.yellow(`- ${file}`));
+          });
+          console.log(
+            chalk.gray(
+              "\nResolve conflicts and run 'graphene continue' to proceed\n"
+            )
+          );
+          process.exit(1);
+        }
       } catch (error) {
         if (
           error instanceof Error &&
