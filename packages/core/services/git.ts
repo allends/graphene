@@ -689,4 +689,13 @@ export class GitService {
       );
     }
   }
+
+  /**
+   * Checks if there are uncommitted changes in the working directory
+   * @returns true if there are uncommitted changes
+   */
+  public async hasUncommittedChanges(): Promise<boolean> {
+    const { output } = await this.executeGitCommand(["status", "--porcelain"]);
+    return output.includes("Changes to be committed");
+  }
 }

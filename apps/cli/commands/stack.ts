@@ -240,6 +240,8 @@ export function registerStackCommands(program: Command) {
         if (result.success) {
           console.log(chalk.green("\n✓ Successfully rebased stack\n"));
         } else {
+          console.log("result: ", result);
+
           console.error(
             chalk.red("\nRebase conflicts in branch:"),
             chalk.yellow(result.conflicts?.branch)

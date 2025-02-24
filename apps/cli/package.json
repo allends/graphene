@@ -1,6 +1,6 @@
 {
   "name": "@allends/graphene-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Graphene CLI for Git branch management",
   "module": "index.ts",
   "type": "module",
@@ -8,11 +8,11 @@
     "access": "public"
   },
   "bin": {
-    "graphene": "./dist/index.js"
+    "graphene": "./graphene"
   },
   "scripts": {
     "start": "bun run index.ts",
-    "build": "bun build ./index.ts --outdir ./dist --target bun",
+    "build": "bun build ./index.ts --compile --bytecode --outfile graphene",
     "dev": "bun run --bun index.ts"
   },
   "files": [

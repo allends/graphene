@@ -195,6 +195,14 @@ export class StackService {
       // Store the current branch to return to it later
       const originalBranch = await this.git.getCurrentBranch();
 
+      // Check for uncommitted changes before proceeding
+      const hasUncommittedChanges = await this.git.hasUncommittedChanges();
+      if (hasUncommittedChanges) {
+        throw new Error(
+          "Cannot rebase stack with uncommitted changes. Please commit or stash your changes first."
+        );
+      }
+
       try {
         // Start with rebasing the first branch onto the base branch
         const firstRebase = await this.git.rebaseBranches(
