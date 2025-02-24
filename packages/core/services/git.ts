@@ -695,7 +695,11 @@ export class GitService {
    * @returns true if there are uncommitted changes
    */
   public async hasUncommittedChanges(): Promise<boolean> {
-    const { output } = await this.executeGitCommand(["status", "--porcelain"]);
-    return output.includes("Changes to be committed");
+    try {
+      await this.executeGitCommand(["update-index", "--refresh"]);
+      return false;
+    } catch (error) {
+      return true;
+    }
   }
 }

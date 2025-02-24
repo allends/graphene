@@ -10,6 +10,7 @@ export class StackService {
 
   private constructor() {
     this.db = DatabaseService.getInstance();
+
     this.git = GitService.getInstance();
   }
 
