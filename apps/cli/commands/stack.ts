@@ -7,6 +7,7 @@ import {
   PullRequestService,
 } from "@allends/graphene-core";
 import inquirer from "inquirer";
+import open from "open";
 
 export function registerStackCommands(program: Command) {
   program

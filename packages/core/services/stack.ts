@@ -181,6 +181,15 @@ export class StackService {
     conflicts?: { branch: string; files: string[] };
   }> {
     try {
+      // Check for uncommitted changes before proceeding
+      console.log("checking for uncommitted changes");
+      const hasUncommittedChanges = await this.git.hasUncommittedChanges();
+      if (hasUncommittedChanges) {
+        throw new Error(
+          "Cannot rebase stack with uncommitted changes. Please commit or stash your changes first."
+        );
+      }
+
       // Get all branches in the stack, ordered by position
       const stackBranches = await this.db
         .getDb()
@@ -195,14 +204,6 @@ export class StackService {
 
       // Store the current branch to return to it later
       const originalBranch = await this.git.getCurrentBranch();
-
-      // Check for uncommitted changes before proceeding
-      const hasUncommittedChanges = await this.git.hasUncommittedChanges();
-      if (hasUncommittedChanges) {
-        throw new Error(
-          "Cannot rebase stack with uncommitted changes. Please commit or stash your changes first."
-        );
-      }
 
       try {
         // Start with rebasing the first branch onto the base branch

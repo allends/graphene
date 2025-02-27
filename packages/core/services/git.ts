@@ -697,6 +697,7 @@ export class GitService {
   public async hasUncommittedChanges(): Promise<boolean> {
     try {
       await this.executeGitCommand(["update-index", "--refresh"]);
+      console.log("no error");
       return false;
     } catch (error) {
       return true;

@@ -58,6 +58,8 @@ program
         console.log(result.output);
       }
 
+      const foo = "bar";
+
       // Print error if any
       if (result.error) {
         console.error(chalk.red(result.error));
