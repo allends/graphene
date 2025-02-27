@@ -1,5 +1,13 @@
 # @allends/graphene-cli
 
+## 0.1.3
+
+### Patch Changes
+
+- Bug fixes
+- Updated dependencies
+  - @allends/graphene-core@0.1.2
+
 ## 0.1.2
 
 ### Patch Changes

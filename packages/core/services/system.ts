@@ -1,6 +1,6 @@
-import { inArray } from "drizzle-orm";
+import { eq, inArray, isNull } from "drizzle-orm";
 import { PullRequestService } from "./pullRequest";
-import { branches, DatabaseService } from "@allends/graphene-database";
+import { branches, DatabaseService, stacks } from "@allends/graphene-database";
 
 /**
  * Deletes branches from the local database that have closed pull requests,
@@ -36,8 +36,10 @@ export async function cleanupClosedPullRequestBranches(
       return 0;
     }
 
+    console.log(branchesToDelete);
+
     // Delete branches from the database
-    const result = await db
+    await db
       .getDb()
       .delete(branches)
       .where(inArray(branches.name, branchesToDelete));
@@ -45,6 +47,26 @@ export async function cleanupClosedPullRequestBranches(
     console.log(
       `Successfully deleted ${branchesToDelete.length} branches with closed pull requests from the database.`
     );
+
+    // Delete any stacks that no longer have branches
+    const orphanedStacks = await db
+      .getDb()
+      .select()
+      .from(stacks)
+      .leftJoin(branches, eq(stacks.id, branches.stack_id))
+      .where(isNull(branches.id));
+
+    const stacksToDelete = orphanedStacks
+      .filter((stack) => !stack.branches)
+      .map((stack) => stack.stacks.id);
+
+    if (stacksToDelete.length > 0) {
+      await db.getDb().delete(stacks).where(inArray(stacks.id, stacksToDelete));
+
+      console.log(
+        `Successfully deleted ${stacksToDelete.length} stacks with no remaining branches.`
+      );
+    }
 
     return branchesToDelete.length;
   } catch (error) {

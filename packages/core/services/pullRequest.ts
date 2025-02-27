@@ -155,7 +155,14 @@ export class PullRequestService {
   }
 
   public async getBranchesWithClosedPullRequests(): Promise<string[]> {
-    const child = spawn("gh", ["pr", "list", "--state", "closed"]);
+    const child = spawn("gh", [
+      "pr",
+      "list",
+      "--state",
+      "closed",
+      "--json",
+      "number,title,headRefName,baseRefName",
+    ]);
 
     return new Promise((resolve, reject) => {
       let output = "";
@@ -171,8 +178,9 @@ export class PullRequestService {
 
       child.on("close", (code) => {
         if (code === 0) {
-          const prs = output.trim().split("\n");
-          resolve(prs);
+          const response = JSON.parse(output);
+          const prNames = response.map((pr: any) => pr.headRefName);
+          resolve(prNames);
         } else {
           reject(new Error(error.trim() || "Failed to create PR"));
         }

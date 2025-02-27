@@ -1,10 +1,10 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnySQLiteColumn,
   integer,
   primaryKey,
   sqliteTable,
   text,
-  type AnySQLiteColumn,
 } from "drizzle-orm/sqlite-core";
 import { foreignKey } from "drizzle-orm/sqlite-core";
 

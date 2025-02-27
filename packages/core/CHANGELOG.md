@@ -1,5 +1,13 @@
 # @allends/graphene-core
 
+## 0.1.2
+
+### Patch Changes
+
+- Bug fixes
+- Updated dependencies
+  - @allends/graphene-database@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes

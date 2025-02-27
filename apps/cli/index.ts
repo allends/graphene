@@ -8,6 +8,7 @@ import { registerStackCommands } from "./commands/stack";
 import { registerBranchCommands } from "./commands/branch";
 import { registerRepoCommands } from "./commands/repo";
 import { registerAuthCommands } from "./commands/auth";
+import { cleanupClosedPullRequestBranches } from "@allends/graphene-core/services/system";
 
 export const program = new Command();
 
@@ -33,6 +34,45 @@ program
       chalk.yellow("graphene --help"),
       "to see all available commands\n"
     );
+  });
+
+// Add the cleanup command
+program
+  .command("cleanup")
+  .description(
+    "Delete branches with closed pull requests from the local database"
+  )
+  .option(
+    "-b, --base-branches <branches>",
+    "Comma-separated list of base branches to exclude from deletion"
+  )
+  .action(async (options) => {
+    try {
+      console.log(
+        chalk.blue("Cleaning up branches with closed pull requests...")
+      );
+
+      // Parse base branches if provided
+      const baseBranches = options.baseBranches
+        ? options.baseBranches.split(",").map((b: string) => b.trim())
+        : undefined;
+
+      const deletedCount = await cleanupClosedPullRequestBranches(baseBranches);
+
+      if (deletedCount > 0) {
+        console.log(
+          chalk.green(`✓ Successfully deleted ${deletedCount} branches.`)
+        );
+      } else {
+        console.log(chalk.yellow("No branches were deleted."));
+      }
+    } catch (error) {
+      console.error(
+        chalk.red("Error during cleanup:"),
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      process.exit(1);
+    }
   });
 
 // Register commands from separate files
