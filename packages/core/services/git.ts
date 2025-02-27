@@ -1,5 +1,12 @@
 import { spawn } from "node:child_process";
 
+interface LastCommit {
+  hash: string;
+  author: string;
+  date: string;
+  message: string;
+}
+
 export class GitService {
   private static instance: GitService;
 
@@ -717,5 +724,65 @@ export class GitService {
    */
   public async pushBranch(branchName: string): Promise<void> {
     await this.executeGitCommand(["push", "origin", branchName]);
+  }
+
+  async getCommitCount(branch: string): Promise<number> {
+    const result = await this.executeGitCommand([
+      "rev-list",
+      "--count",
+      branch,
+    ]);
+    return parseInt(result.output.trim(), 10);
+  }
+
+  async getLastCommit(branch: string): Promise<LastCommit> {
+    const result = await this.executeGitCommand([
+      "log",
+      "-1",
+      "--pretty=format:%H%n%an%n%ad%n%s",
+      branch,
+    ]);
+    const [hash, author, date, message] = result.output.split("\n");
+    return { hash, author, date, message };
+  }
+
+  async getTrackingBranch(branch: string): Promise<string | null> {
+    try {
+      const result = await this.executeGitCommand([
+        "rev-parse",
+        "--abbrev-ref",
+        `${branch}@{upstream}`,
+      ]);
+      return result.output.trim() || null;
+    } catch {
+      return null;
+    }
+  }
+
+  async getAheadBehindCount(
+    branch: string
+  ): Promise<{ ahead: number; behind: number }> {
+    try {
+      const result = await this.executeGitCommand([
+        "rev-list",
+        "--left-right",
+        "--count",
+        `${branch}...@{upstream}`,
+      ]);
+      const [ahead, behind] = result.output
+        .split("\t")
+        .map((n: string) => parseInt(n, 10));
+      return { ahead, behind };
+    } catch {
+      return { ahead: 0, behind: 0 };
+    }
+  }
+
+  async getModifiedFiles(): Promise<string[]> {
+    const result = await this.executeGitCommand(["status", "--porcelain"]);
+    return result.output
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => line.slice(3));
   }
 }

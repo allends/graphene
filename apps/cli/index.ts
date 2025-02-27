@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { GitService } from "@allends/graphene-core";
+import { DatabaseService, GitService } from "@allends/graphene-core";
 import chalk from "chalk";
 
 import { Command } from "commander";
@@ -42,20 +42,18 @@ program
   .description(
     "Delete branches with closed pull requests from the local database"
   )
-  .option(
-    "-b, --base-branches <branches>",
-    "Comma-separated list of base branches to exclude from deletion"
-  )
-  .action(async (options) => {
+  .action(async () => {
     try {
+      const gitService = GitService.getInstance();
+      const repositoryName = await gitService.getRepositoryName();
+      const dbService = DatabaseService.getInstance();
+
       console.log(
         chalk.blue("Cleaning up branches with closed pull requests...")
       );
 
       // Parse base branches if provided
-      const baseBranches = options.baseBranches
-        ? options.baseBranches.split(",").map((b: string) => b.trim())
-        : undefined;
+      const baseBranches = await dbService.getBaseBranches(repositoryName);
 
       const deletedCount = await cleanupClosedPullRequestBranches(baseBranches);
 

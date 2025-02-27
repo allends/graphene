@@ -1,6 +1,10 @@
 import { GitService } from "@allends/graphene-core";
 import { DatabaseService } from "@allends/graphene-database/src";
-import { branches, stacks } from "@allends/graphene-database/src/schema";
+import {
+  branches,
+  stacks,
+  type Stack,
+} from "@allends/graphene-database/src/schema";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 export class StackService {
@@ -617,5 +621,39 @@ export class StackService {
         }`
       );
     }
+  }
+
+  public async getParentBranch(branchName: string): Promise<string | null> {
+    const [branch] = await this.db
+      .getDb()
+      .select()
+      .from(branches)
+      .where(eq(branches.name, branchName))
+      .limit(1);
+
+    if (!branch || !branch.parent_id) {
+      return null;
+    }
+
+    const [parent] = await this.db
+      .getDb()
+      .select()
+      .from(branches)
+      .where(eq(branches.id, branch.parent_id))
+      .limit(1);
+
+    return parent?.name || null;
+  }
+
+  public async getStackForBranch(branchName: string): Promise<Stack | null> {
+    const [branch] = await this.db
+      .getDb()
+      .select()
+      .from(branches)
+      .innerJoin(stacks, eq(branches.stack_id, stacks.id))
+      .where(eq(branches.name, branchName))
+      .limit(1);
+
+    return branch?.stacks || null;
   }
 }

@@ -2,6 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import {
   BranchService,
+  DatabaseService,
   GitService,
   StackService,
 } from "@allends/graphene-core";
@@ -541,6 +542,129 @@ export function registerBranchCommands(program: Command) {
             "\n"
           );
         }
+        process.exit(1);
+      }
+    });
+
+  program
+    .command("about")
+    .description("Display detailed information about a branch")
+    .argument("[branch]", "Branch name (defaults to current branch)")
+    .action(async (_branchName?: string) => {
+      try {
+        const gitService = GitService.getInstance();
+        const stackService = StackService.getInstance();
+        const dbService = DatabaseService.getInstance();
+
+        // Get branch name (use current if not specified)
+        const branchName = _branchName || (await gitService.getCurrentBranch());
+        if (!branchName) {
+          throw new Error("No branch specified and not currently on a branch");
+        }
+
+        const branch = await dbService.getBranch(branchName);
+
+        console.log(chalk.blue("\nBranch Information:"));
+        console.log("─".repeat(50));
+
+        // Basic branch info
+        console.log(chalk.bold("Name:         "), chalk.yellow(branchName));
+
+        // Get stack info
+        const stack = await stackService.getStackForBranch(branchName);
+
+        // Get parent branch
+        const parentBranch = await stackService.getParentBranch(branchName);
+
+        // Display information
+        const basedOn =
+          branch.position === 0 ? stack?.base_branch : parentBranch;
+
+        console.log(
+          chalk.bold("Based on:     "),
+          basedOn ? chalk.yellow(basedOn) : chalk.gray("none")
+        );
+
+        // Get stack info
+        console.log(
+          chalk.bold("Stack:        "),
+          stack ? chalk.yellow(stack.name) : chalk.gray("not in stack")
+        );
+
+        // Based off of the stack, get the base branch
+        console.log(
+          chalk.bold("Base Branch:  "),
+          chalk.yellow(stack?.base_branch)
+        );
+
+        // Get commit info
+        const commitCount = await gitService.getCommitCount(branchName);
+        console.log(chalk.bold("Commits:      "), chalk.yellow(commitCount));
+
+        // Get last commit info
+        const lastCommit = await gitService.getLastCommit(branchName);
+        if (lastCommit) {
+          console.log("\n" + chalk.bold("Last Commit:"));
+          console.log(
+            chalk.bold("  Hash:      "),
+            chalk.yellow(lastCommit.hash)
+          );
+          console.log(
+            chalk.bold("  Author:    "),
+            chalk.yellow(lastCommit.author)
+          );
+          console.log(
+            chalk.bold("  Date:      "),
+            chalk.yellow(lastCommit.date)
+          );
+          console.log(
+            chalk.bold("  Message:   "),
+            chalk.yellow(lastCommit.message)
+          );
+        }
+
+        // Get tracking info
+        const trackingBranch = await gitService.getTrackingBranch(branchName);
+        console.log("\n" + chalk.bold("Tracking:"));
+        console.log(
+          chalk.bold("  Remote:    "),
+          trackingBranch
+            ? chalk.yellow(trackingBranch)
+            : chalk.gray("not tracking")
+        );
+
+        // Get ahead/behind count if tracking
+        if (trackingBranch) {
+          const { ahead, behind } = await gitService.getAheadBehindCount(
+            branchName
+          );
+          if (ahead > 0)
+            console.log(
+              chalk.bold("  Ahead:     "),
+              chalk.yellow(`${ahead} commit${ahead !== 1 ? "s" : ""}`)
+            );
+          if (behind > 0)
+            console.log(
+              chalk.bold("  Behind:    "),
+              chalk.yellow(`${behind} commit${behind !== 1 ? "s" : ""}`)
+            );
+        }
+
+        // Get modified files
+        const modifiedFiles = await gitService.getModifiedFiles();
+        if (modifiedFiles.length > 0) {
+          console.log("\n" + chalk.bold("Modified Files:"));
+          modifiedFiles.forEach((file) => {
+            console.log(chalk.bold("  • "), chalk.yellow(file));
+          });
+        }
+
+        console.log("\n" + "─".repeat(50));
+      } catch (error) {
+        console.error(
+          chalk.red("\nFailed to get branch info:"),
+          error instanceof Error ? error.message : "Unknown error"
+        );
         process.exit(1);
       }
     });
