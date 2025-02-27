@@ -153,4 +153,30 @@ export class PullRequestService {
       });
     });
   }
+
+  public async getBranchesWithClosedPullRequests(): Promise<string[]> {
+    const child = spawn("gh", ["pr", "list", "--state", "closed"]);
+
+    return new Promise((resolve, reject) => {
+      let output = "";
+      let error = "";
+
+      child.stdout.on("data", (data) => {
+        output += data.toString();
+      });
+
+      child.stderr.on("data", (data) => {
+        error += data.toString();
+      });
+
+      child.on("close", (code) => {
+        if (code === 0) {
+          const prs = output.trim().split("\n");
+          resolve(prs);
+        } else {
+          reject(new Error(error.trim() || "Failed to create PR"));
+        }
+      });
+    });
+  }
 }
