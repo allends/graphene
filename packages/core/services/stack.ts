@@ -1,6 +1,10 @@
 import { GitService } from "@allends/graphene-core";
 import { DatabaseService } from "@allends/graphene-database/src";
-import { branches, stacks } from "@allends/graphene-database/src/schema";
+import {
+  branches,
+  stacks,
+  type Stack,
+} from "@allends/graphene-database/src/schema";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 export class StackService {
@@ -641,7 +645,7 @@ export class StackService {
     return parent?.name || null;
   }
 
-  public async getStackForBranch(branchName: string): Promise<string | null> {
+  public async getStackForBranch(branchName: string): Promise<Stack | null> {
     const [branch] = await this.db
       .getDb()
       .select()
@@ -650,6 +654,6 @@ export class StackService {
       .where(eq(branches.name, branchName))
       .limit(1);
 
-    return branch?.stacks.name || null;
+    return branch?.stacks || null;
   }
 }

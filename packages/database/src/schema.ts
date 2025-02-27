@@ -6,7 +6,6 @@ import {
   sqliteTable,
   text,
 } from "drizzle-orm/sqlite-core";
-import { foreignKey } from "drizzle-orm/sqlite-core";
 
 export const repositories = sqliteTable("repositories", {
   name: text("name").primaryKey(),
@@ -38,7 +37,7 @@ export const branches = sqliteTable("branches", {
     .notNull()
     .references(() => stacks.id, { onDelete: "cascade" }),
   parent_id: integer("parent_id").references(
-    (): AnySQLiteColumn => branches.id,
+    (): AnySQLiteColumn => branches.id
   ),
   position: integer("position").notNull(),
   status: text("status").notNull().default("active"),
@@ -65,3 +64,8 @@ export const branchesRelations = relations(branches, ({ one, many }) => ({
     references: [branches.id],
   }),
 }));
+
+// Export types
+export type Stack = typeof stacks.$inferSelect;
+export type Branch = typeof branches.$inferSelect;
+export type Repository = typeof repositories.$inferSelect;

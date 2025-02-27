@@ -578,7 +578,13 @@ export function registerBranchCommands(program: Command) {
         const stack = await stackService.getStackForBranch(branch);
         console.log(
           chalk.bold("Stack:        "),
-          stack ? chalk.yellow(stack) : chalk.gray("not in stack")
+          stack ? chalk.yellow(stack.name) : chalk.gray("not in stack")
+        );
+
+        // Based off of the stack, get the base branch
+        console.log(
+          chalk.bold("Base Branch:  "),
+          chalk.yellow(stack?.base_branch)
         );
 
         // Get commit info
