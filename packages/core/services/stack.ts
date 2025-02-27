@@ -141,18 +141,6 @@ export class StackService {
 
       // Get latest commit info
       const { sha, author, message } = await this.git.getLatestCommit();
-
-      // Add initial commit info
-      if (sha && author && message) {
-        const [branch] = await this.db
-          .getDb()
-          .select()
-          .from(branches)
-          .where(eq(branches.name, branchName))
-          .limit(1);
-
-        await this.db.addCommit(branch.id, sha, message, author);
-      }
     } catch (error) {
       throw new Error(
         `Failed to create branch in stack: ${
@@ -470,7 +458,7 @@ export class StackService {
         throw new Error("Branch is not tracked");
       }
 
-      // Remove branch from stack
+      // Remove branch from stack (commits will be deleted automatically)
       await this.db
         .getDb()
         .delete(branches)
@@ -586,14 +574,9 @@ export class StackService {
     try {
       const db = this.db.getDb();
 
-      // Start a transaction to ensure atomic deletion
-      await db.transaction(async (tx) => {
-        // Delete all branches in these stacks
-        await tx.delete(branches).where(inArray(branches.stack_id, stackIds));
-
-        // Delete the stacks
-        await tx.delete(stacks).where(inArray(stacks.id, stackIds));
-      });
+      // With cascade delete, we only need to delete the stacks
+      // Branches and commits will be deleted automatically
+      await db.delete(stacks).where(inArray(stacks.id, stackIds));
     } catch (error) {
       throw new Error(
         `Failed to delete stacks: ${

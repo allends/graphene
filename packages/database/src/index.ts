@@ -47,10 +47,9 @@ export class DatabaseService {
     return this.db
       .insert(schema.stacks)
       .values({
-        name,
+        name: `stack/${name}`,
         repository_name: repositoryName,
         base_branch: baseBranch,
-        description,
       })
       .returning();
   }
@@ -70,7 +69,7 @@ export class DatabaseService {
       .values({
         name: branchName,
         stack_id: stackId,
-        parent_branch_id: parentBranchId,
+        parent_id: parentBranchId,
         position,
         status: "active",
       })
@@ -83,23 +82,6 @@ export class DatabaseService {
       .from(schema.branches)
       .where(sql`stack_id = ${stackId}`)
       .orderBy(schema.branches.position);
-  }
-
-  public async addCommit(
-    branchId: number,
-    sha: string,
-    message: string,
-    author: string
-  ) {
-    return this.db
-      .insert(schema.commits)
-      .values({
-        branch_id: branchId,
-        sha,
-        message,
-        author,
-      })
-      .returning();
   }
 
   public async updateBranchStatus(
@@ -116,12 +98,14 @@ export class DatabaseService {
       .returning();
   }
 
-  public async getBaseBranches(repositoryName: string) {
+  public async getBaseBranches(repositoryName: string): Promise<string[]> {
     return this.db
       .select()
       .from(schema.repositories)
       .where(sql`name = ${repositoryName}`)
-      .then((res) => JSON.parse(res[0].base_branches));
+      .then((res) =>
+        res[0].base_branches ? JSON.parse(res[0].base_branches) : ["main"]
+      );
   }
 }
 

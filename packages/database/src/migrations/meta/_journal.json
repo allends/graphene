@@ -29,6 +29,20 @@
       "when": 1740191405372,
       "tag": "0003_shallow_eternals",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1740629208546,
+      "tag": "0004_glamorous_jack_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1740630136598,
+      "tag": "0005_kind_blindfold",
+      "breakpoints": true
     }
   ]
 }
