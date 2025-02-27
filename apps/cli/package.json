@@ -1,6 +1,6 @@
 {
   "name": "@allends/graphene-cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Graphene CLI for Git branch management",
   "module": "index.ts",
   "type": "module",
