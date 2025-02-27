@@ -182,7 +182,6 @@ export class StackService {
   }> {
     try {
       // Check for uncommitted changes before proceeding
-      console.log("checking for uncommitted changes");
       const hasUncommittedChanges = await this.git.hasUncommittedChanges();
       if (hasUncommittedChanges) {
         throw new Error(

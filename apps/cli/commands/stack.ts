@@ -161,6 +161,9 @@ export function registerStackCommands(program: Command) {
         const currentBranch = await gitService.getCurrentBranch();
         console.log(chalk.blue("\nCreating pull request..."));
 
+        // Push changes to remote
+        await gitService.pushBranch(currentBranch);
+
         const prUrl = await prService.createPullRequest(currentBranch);
 
         // Open the PR in the browser
@@ -243,8 +246,6 @@ export function registerStackCommands(program: Command) {
         if (result.success) {
           console.log(chalk.green("\n✓ Successfully rebased stack\n"));
         } else {
-          console.log("result: ", result);
-
           console.error(
             chalk.red("\nRebase conflicts in branch:"),
             chalk.yellow(result.conflicts?.branch)

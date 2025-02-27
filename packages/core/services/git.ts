@@ -155,6 +155,14 @@ export class GitService {
    */
   public async commitAll(message?: string): Promise<void> {
     try {
+      // Add all changes
+      const addResult = await this.executeGitCommand(["add", "."]);
+      if (addResult.exitCode !== 0) {
+        throw new Error(
+          `Failed to add changes: ${addResult.error || "Unknown error"}`
+        );
+      }
+
       // Create the commit
       const commitArgs = ["commit", "-a"];
       if (message) {
@@ -697,10 +705,17 @@ export class GitService {
   public async hasUncommittedChanges(): Promise<boolean> {
     try {
       await this.executeGitCommand(["update-index", "--refresh"]);
-      console.log("no error");
       return false;
     } catch (error) {
       return true;
     }
+  }
+
+  /**
+   * Pushes a branch to the remote repository
+   * @param branchName The name of the branch to push
+   */
+  public async pushBranch(branchName: string): Promise<void> {
+    await this.executeGitCommand(["push", "origin", branchName]);
   }
 }
