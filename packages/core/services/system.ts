@@ -10,7 +10,7 @@ import { branches, DatabaseService, stacks } from "@allends/graphene-database";
  * @returns Promise with the number of branches deleted
  */
 export async function cleanupClosedPullRequestBranches(
-  baseBranches: string[] = ["main", "master", "develop"]
+  baseBranches: string[] = ["main", "master", "staging", "develop"]
 ): Promise<number> {
   try {
     // Initialize services

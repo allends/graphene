@@ -8,11 +8,11 @@
     "access": "public"
   },
   "bin": {
-    "graphene": "./graphene"
+    "graphene": "./dist/index.js"
   },
   "scripts": {
     "start": "bun run index.ts",
-    "build": "bun build ./index.ts --compile --outfile graphene",
+    "build": "bun build ./index.ts --target bun --outdir dist",
     "dev": "bun run --bun index.ts"
   },
   "files": [

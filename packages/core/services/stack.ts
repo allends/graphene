@@ -618,4 +618,38 @@ export class StackService {
       );
     }
   }
+
+  public async getParentBranch(branchName: string): Promise<string | null> {
+    const [branch] = await this.db
+      .getDb()
+      .select()
+      .from(branches)
+      .where(eq(branches.name, branchName))
+      .limit(1);
+
+    if (!branch || !branch.parent_id) {
+      return null;
+    }
+
+    const [parent] = await this.db
+      .getDb()
+      .select()
+      .from(branches)
+      .where(eq(branches.id, branch.parent_id))
+      .limit(1);
+
+    return parent?.name || null;
+  }
+
+  public async getStackForBranch(branchName: string): Promise<string | null> {
+    const [branch] = await this.db
+      .getDb()
+      .select()
+      .from(branches)
+      .innerJoin(stacks, eq(branches.stack_id, stacks.id))
+      .where(eq(branches.name, branchName))
+      .limit(1);
+
+    return branch?.stacks.name || null;
+  }
 }
