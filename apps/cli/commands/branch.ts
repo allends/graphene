@@ -2,6 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import {
   BranchService,
+  DatabaseService,
   GitService,
   StackService,
 } from "@allends/graphene-core";
@@ -549,33 +550,42 @@ export function registerBranchCommands(program: Command) {
     .command("about")
     .description("Display detailed information about a branch")
     .argument("[branch]", "Branch name (defaults to current branch)")
-    .action(async (branchName?: string) => {
+    .action(async (_branchName?: string) => {
       try {
         const gitService = GitService.getInstance();
-        const branchService = BranchService.getInstance();
         const stackService = StackService.getInstance();
+        const dbService = DatabaseService.getInstance();
 
         // Get branch name (use current if not specified)
-        const branch = branchName || (await gitService.getCurrentBranch());
-        if (!branch) {
+        const branchName = _branchName || (await gitService.getCurrentBranch());
+        if (!branchName) {
           throw new Error("No branch specified and not currently on a branch");
         }
+
+        const branch = await dbService.getBranch(branchName);
 
         console.log(chalk.blue("\nBranch Information:"));
         console.log("─".repeat(50));
 
         // Basic branch info
-        console.log(chalk.bold("Name:         "), chalk.yellow(branch));
+        console.log(chalk.bold("Name:         "), chalk.yellow(branchName));
+
+        // Get stack info
+        const stack = await stackService.getStackForBranch(branchName);
 
         // Get parent branch
-        const parentBranch = await stackService.getParentBranch(branch);
+        const parentBranch = await stackService.getParentBranch(branchName);
+
+        // Display information
+        const basedOn =
+          branch.position === 0 ? stack?.base_branch : parentBranch;
+
         console.log(
-          chalk.bold("Parent:       "),
-          parentBranch ? chalk.yellow(parentBranch) : chalk.gray("none")
+          chalk.bold("Based on:     "),
+          basedOn ? chalk.yellow(basedOn) : chalk.gray("none")
         );
 
         // Get stack info
-        const stack = await stackService.getStackForBranch(branch);
         console.log(
           chalk.bold("Stack:        "),
           stack ? chalk.yellow(stack.name) : chalk.gray("not in stack")
@@ -588,11 +598,11 @@ export function registerBranchCommands(program: Command) {
         );
 
         // Get commit info
-        const commitCount = await gitService.getCommitCount(branch);
+        const commitCount = await gitService.getCommitCount(branchName);
         console.log(chalk.bold("Commits:      "), chalk.yellow(commitCount));
 
         // Get last commit info
-        const lastCommit = await gitService.getLastCommit(branch);
+        const lastCommit = await gitService.getLastCommit(branchName);
         if (lastCommit) {
           console.log("\n" + chalk.bold("Last Commit:"));
           console.log(
@@ -614,7 +624,7 @@ export function registerBranchCommands(program: Command) {
         }
 
         // Get tracking info
-        const trackingBranch = await gitService.getTrackingBranch(branch);
+        const trackingBranch = await gitService.getTrackingBranch(branchName);
         console.log("\n" + chalk.bold("Tracking:"));
         console.log(
           chalk.bold("  Remote:    "),
@@ -626,7 +636,7 @@ export function registerBranchCommands(program: Command) {
         // Get ahead/behind count if tracking
         if (trackingBranch) {
           const { ahead, behind } = await gitService.getAheadBehindCount(
-            branch
+            branchName
           );
           if (ahead > 0)
             console.log(
