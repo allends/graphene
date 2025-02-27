@@ -7,6 +7,7 @@ import {
   PullRequestService,
 } from "@allends/graphene-core";
 import inquirer from "inquirer";
+import open from "open";
 
 export function registerStackCommands(program: Command) {
   program
@@ -156,8 +157,23 @@ export function registerStackCommands(program: Command) {
         const gitService = GitService.getInstance();
         const prService = PullRequestService.getInstance();
 
-        // Get current branch
         const currentBranch = await gitService.getCurrentBranch();
+
+        // Push changes to remote
+        await gitService.pushBranch(currentBranch);
+
+        // Check if branch has a PR
+        const hasPR = await prService.checkPRExists(currentBranch);
+
+        if (hasPR) {
+          console.log(
+            chalk.yellow("\nUpdated existing PR:"),
+            chalk.blue(currentBranch)
+          );
+          return;
+        }
+
+        // Get current branch
         console.log(chalk.blue("\nCreating pull request..."));
 
         const prUrl = await prService.createPullRequest(currentBranch);
@@ -222,6 +238,8 @@ export function registerStackCommands(program: Command) {
 
         // Get the base branch (main or master)
         const baseBranch = stack.base_branch;
+
+        // Here is a comment
 
         console.log(
           chalk.blue("\nRebasing stack"),

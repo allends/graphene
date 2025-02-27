@@ -1,5 +1,11 @@
 # @allends/graphene-cli
 
+## 0.1.2
+
+### Patch Changes
+
+- Update distribution to binary
+
 ## 0.1.1
 
 ### Patch Changes

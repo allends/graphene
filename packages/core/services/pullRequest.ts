@@ -90,8 +90,8 @@ export class PullRequestService {
         .where(
           and(
             eq(branches.stack_id, branchData.stack_id),
-            eq(branches.position, branchData.position - 1),
-          ),
+            eq(branches.position, branchData.position - 1)
+          )
         )
         .limit(1);
 
@@ -109,7 +109,7 @@ export class PullRequestService {
       const parentPR = await this.checkPRExists(parentBranch.name);
       if (!parentPR) {
         throw new Error(
-          "Parent branch must have an open PR before creating this PR",
+          "Parent branch must have an open PR before creating this PR"
         );
       }
 
@@ -123,7 +123,7 @@ export class PullRequestService {
       throw new Error(
         `Failed to create pull request: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     }
   }
@@ -131,7 +131,7 @@ export class PullRequestService {
   /**
    * Checks if a PR exists for a branch using gh CLI
    */
-  private async checkPRExists(branchName: string): Promise<boolean> {
+  async checkPRExists(branchName: string): Promise<boolean> {
     const child = spawn("gh", [
       "pr",
       "list",
@@ -150,6 +150,32 @@ export class PullRequestService {
 
       child.on("close", () => {
         resolve(output.trim().length > 0);
+      });
+    });
+  }
+
+  public async getBranchesWithClosedPullRequests(): Promise<string[]> {
+    const child = spawn("gh", ["pr", "list", "--state", "closed"]);
+
+    return new Promise((resolve, reject) => {
+      let output = "";
+      let error = "";
+
+      child.stdout.on("data", (data) => {
+        output += data.toString();
+      });
+
+      child.stderr.on("data", (data) => {
+        error += data.toString();
+      });
+
+      child.on("close", (code) => {
+        if (code === 0) {
+          const prs = output.trim().split("\n");
+          resolve(prs);
+        } else {
+          reject(new Error(error.trim() || "Failed to create PR"));
+        }
       });
     });
   }

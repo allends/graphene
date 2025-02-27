@@ -1,8 +1,15 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { relations, sql } from "drizzle-orm";
+import {
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+  type AnySQLiteColumn,
+} from "drizzle-orm/sqlite-core";
 import { foreignKey } from "drizzle-orm/sqlite-core";
 
 export const repositories = sqliteTable("repositories", {
-  name: text("name").primaryKey().notNull(),
+  name: text("name").primaryKey(),
   base_branches: text("base_branches").notNull(),
   created_at: integer("created_at", { mode: "timestamp" })
     .notNull()
@@ -11,10 +18,11 @@ export const repositories = sqliteTable("repositories", {
 
 export const stacks = sqliteTable("stacks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  repository_name: text("repository_name").notNull(),
   name: text("name").notNull(),
-  base_branch: text("base_branch").notNull(), // e.g., 'main', 'develop'
-  description: text("description"),
+  repository_name: text("repository_name")
+    .notNull()
+    .references(() => repositories.name, { onDelete: "cascade" }),
+  base_branch: text("base_branch").notNull(),
   created_at: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$default(() => new Date()),
@@ -23,51 +31,37 @@ export const stacks = sqliteTable("stacks", {
     .$default(() => new Date()),
 });
 
-export const branches = sqliteTable(
-  "branches",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    name: text("name").notNull(),
-    stack_id: integer("stack_id"),
-    parent_branch_id: integer("parent_branch_id"),
-    position: integer("position").notNull(), // Order in the stack
-    status: text("status").notNull().$type<"active" | "merged" | "abandoned">(), // Branch status
-    latest_commit: text("latest_commit"), // SHA of latest commit
-    created_at: integer("created_at", { mode: "timestamp" })
-      .notNull()
-      .$default(() => new Date()),
-    updated_at: integer("updated_at", { mode: "timestamp" })
-      .notNull()
-      .$default(() => new Date()),
-  },
-  (table) => ({
-    stackReference: foreignKey({
-      columns: [table.stack_id],
-      foreignColumns: [stacks.id],
-    }),
-    parentReference: foreignKey({
-      columns: [table.parent_branch_id],
-      foreignColumns: [table.id],
-    }),
-  })
-);
+export const branches = sqliteTable("branches", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  stack_id: integer("stack_id")
+    .notNull()
+    .references(() => stacks.id, { onDelete: "cascade" }),
+  parent_id: integer("parent_id").references(
+    (): AnySQLiteColumn => branches.id
+  ),
+  position: integer("position").notNull(),
+  status: text("status").notNull().default("active"),
+  created_at: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$default(() => new Date()),
+  updated_at: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$default(() => new Date()),
+});
 
-export const commits = sqliteTable(
-  "commits",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    sha: text("sha").notNull(),
-    branch_id: integer("branch_id"),
-    message: text("message").notNull(),
-    author: text("author").notNull(),
-    created_at: integer("created_at", { mode: "timestamp" })
-      .notNull()
-      .$default(() => new Date()),
-  },
-  (table) => ({
-    branchReference: foreignKey({
-      columns: [table.branch_id],
-      foreignColumns: [branches.id],
-    }),
-  })
-);
+// Relations
+export const stacksRelations = relations(stacks, ({ many }) => ({
+  branches: many(branches),
+}));
+
+export const branchesRelations = relations(branches, ({ one, many }) => ({
+  stack: one(stacks, {
+    fields: [branches.stack_id],
+    references: [stacks.id],
+  }),
+  parent: one(branches, {
+    fields: [branches.parent_id],
+    references: [branches.id],
+  }),
+}));

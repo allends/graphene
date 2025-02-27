@@ -106,7 +106,7 @@ export class BranchService {
         return [defaultBase];
       }
 
-      return JSON.parse(repo.base_branches);
+      return repo.base_branches ? JSON.parse(repo.base_branches) : ["main"];
     } catch (error) {
       throw new Error(
         `Failed to get base branches: ${
