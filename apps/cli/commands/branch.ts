@@ -127,6 +127,8 @@ export function registerBranchCommands(program: Command) {
         // Get all configured base branches
         const baseBranches = await branchService.listBaseBranches();
 
+        console.log(typeof baseBranches);
+
         // Set up readline interface to handle 'q' keypress
         const rl = createInterface({
           input: process.stdin,
