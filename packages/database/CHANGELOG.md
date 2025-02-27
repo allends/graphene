@@ -1,5 +1,11 @@
 # @allends/graphene-database
 
+## 0.1.5
+
+### Patch Changes
+
+- Update build
+
 ## 0.1.4
 
 ### Patch Changes
