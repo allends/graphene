@@ -176,6 +176,3 @@ dist
 
 # Turbo
 .turbo
-
-# Binary files
-apps/cli/graphene
