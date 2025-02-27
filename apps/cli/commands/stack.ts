@@ -157,9 +157,7 @@ export function registerStackCommands(program: Command) {
         const gitService = GitService.getInstance();
         const prService = PullRequestService.getInstance();
 
-        // Get current branch
         const currentBranch = await gitService.getCurrentBranch();
-        console.log(chalk.blue("\nCreating pull request..."));
 
         // Push changes to remote
         await gitService.pushBranch(currentBranch);
@@ -174,6 +172,10 @@ export function registerStackCommands(program: Command) {
           );
           return;
         }
+
+        // Get current branch
+        console.log(chalk.blue("\nCreating pull request..."));
+
         const prUrl = await prService.createPullRequest(currentBranch);
 
         // Open the PR in the browser
