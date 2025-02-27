@@ -77,12 +77,8 @@
           "name": "branches_stack_id_stacks_id_fk",
           "tableFrom": "branches",
           "tableTo": "stacks",
-          "columnsFrom": [
-            "stack_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["stack_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -90,12 +86,8 @@
           "name": "branches_parent_branch_id_branches_id_fk",
           "tableFrom": "branches",
           "tableTo": "branches",
-          "columnsFrom": [
-            "parent_branch_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_branch_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -156,12 +148,8 @@
           "name": "commits_branch_id_branches_id_fk",
           "tableFrom": "commits",
           "tableTo": "branches",
-          "columnsFrom": [
-            "branch_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["branch_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

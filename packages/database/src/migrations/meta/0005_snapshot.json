@@ -71,12 +71,8 @@
           "name": "branches_stack_id_stacks_id_fk",
           "tableFrom": "branches",
           "tableTo": "stacks",
-          "columnsFrom": [
-            "stack_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["stack_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -84,12 +80,8 @@
           "name": "branches_parent_id_branches_id_fk",
           "tableFrom": "branches",
           "tableTo": "branches",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -182,12 +174,8 @@
           "name": "stacks_repository_name_repositories_name_fk",
           "tableFrom": "stacks",
           "tableTo": "repositories",
-          "columnsFrom": [
-            "repository_name"
-          ],
-          "columnsTo": [
-            "name"
-          ],
+          "columnsFrom": ["repository_name"],
+          "columnsTo": ["name"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

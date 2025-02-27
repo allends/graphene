@@ -42,7 +42,7 @@ export class DatabaseService {
     name: string,
     repositoryName: string,
     baseBranch: string,
-    description?: string
+    description?: string,
   ) {
     return this.db
       .insert(schema.stacks)
@@ -62,7 +62,7 @@ export class DatabaseService {
     stackId: number,
     branchName: string,
     position: number,
-    parentBranchId?: number
+    parentBranchId?: number,
   ) {
     return this.db
       .insert(schema.branches)
@@ -86,7 +86,7 @@ export class DatabaseService {
 
   public async updateBranchStatus(
     branchId: number,
-    status: "active" | "merged" | "abandoned"
+    status: "active" | "merged" | "abandoned",
   ) {
     return this.db
       .update(schema.branches)
@@ -104,7 +104,7 @@ export class DatabaseService {
       .from(schema.repositories)
       .where(sql`name = ${repositoryName}`)
       .then((res) =>
-        res[0].base_branches ? JSON.parse(res[0].base_branches) : ["main"]
+        res[0].base_branches ? JSON.parse(res[0].base_branches) : ["main"],
       );
   }
 }

@@ -38,7 +38,7 @@ export const branches = sqliteTable("branches", {
     .notNull()
     .references(() => stacks.id, { onDelete: "cascade" }),
   parent_id: integer("parent_id").references(
-    (): AnySQLiteColumn => branches.id
+    (): AnySQLiteColumn => branches.id,
   ),
   position: integer("position").notNull(),
   status: text("status").notNull().default("active"),

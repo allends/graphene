@@ -11,7 +11,9 @@
     "build": "turbo run build",
     "release": "bunx @changesets/cli && bunx @changesets/cli version",
     "publish": "bun run scripts/publish.ts",
-    "dev": "cd apps/cli && bun run dev"
+    "dev": "cd apps/cli && bun run dev",
+    "format": "biome format --write",
+    "lint": "biome check"
   },
   "workspaces": [
     "apps/*",
