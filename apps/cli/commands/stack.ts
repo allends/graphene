@@ -164,6 +164,16 @@ export function registerStackCommands(program: Command) {
         // Push changes to remote
         await gitService.pushBranch(currentBranch);
 
+        // Check if branch has a PR
+        const hasPR = await prService.checkPRExists(currentBranch);
+
+        if (hasPR) {
+          console.log(
+            chalk.yellow("\nUpdated existing PR:"),
+            chalk.blue(currentBranch)
+          );
+          return;
+        }
         const prUrl = await prService.createPullRequest(currentBranch);
 
         // Open the PR in the browser
