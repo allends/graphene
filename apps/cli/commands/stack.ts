@@ -223,6 +223,8 @@ export function registerStackCommands(program: Command) {
         // Get the base branch (main or master)
         const baseBranch = stack.base_branch;
 
+        // Here is a comment
+
         console.log(
           chalk.blue("\nRebasing stack"),
           chalk.yellow(stack.stack_name),
