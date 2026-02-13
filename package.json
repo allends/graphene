@@ -14,6 +14,7 @@
     "dev": "cd apps/cli && bun run dev",
     "format": "biome format --write",
     "lint": "biome check",
+    "test": "turbo run test",
     "clink": "bun run build && rm /opt/homebrew/bin/graphene && ln apps/cli/graphene /opt/homebrew/bin/graphene"
   },
   "workspaces": [

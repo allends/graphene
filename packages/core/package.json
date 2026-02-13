@@ -16,7 +16,8 @@
     "@allends/graphene-database": "workspace:*"
   },
   "scripts": {
-    "build": "bun build ./index.ts --outdir ./dist --target bun"
+    "build": "bun build ./index.ts --outdir ./dist --target bun",
+    "test": "bun test"
   },
   "files": [
     "dist"

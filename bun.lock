@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@allends/graphene",
@@ -18,7 +19,7 @@
       "name": "@allends/graphene-cli",
       "version": "0.1.2",
       "bin": {
-        "graphene": "./graphene"
+        "graphene": "./graphene",
       },
       "dependencies": {
         "@allends/graphene-core": "workspace:*",
